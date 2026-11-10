@@ -1,0 +1,161 @@
+# API テスト
+
+工場在庫管理システムのバックエンド API を対象とした包括的なテストスイートです。
+
+## テストの構成
+
+```
+tests/
+├── pytest.ini          # Pytest configuration
+├── backend/            # Backend API tests
+│   ├── conftest.py     # Test fixtures and configuration
+│   ├── test_inventory.py      # Inventory endpoint tests (10 tests)
+│   ├── test_orders.py         # Orders endpoint tests (15 tests)
+│   ├── test_dashboard.py      # Dashboard endpoint tests (13 tests)
+│   └── test_misc_endpoints.py # Demand, backlog, spending tests (13 tests)
+└── README.md           # This file
+```
+
+## テストの実行方法
+
+### すべてのテストを実行する
+```bash
+cd tests
+uv run pytest -v
+```
+
+### 特定のテストファイルを実行する
+```bash
+cd tests
+uv run pytest backend/test_inventory.py -v
+```
+
+### 特定のテストクラスを実行する
+```bash
+cd tests
+uv run pytest backend/test_inventory.py::TestInventoryEndpoints -v
+```
+
+### 特定のテストだけを実行する
+```bash
+cd tests
+uv run pytest backend/test_inventory.py::TestInventoryEndpoints::test_get_all_inventory -v
+```
+
+### カバレッジ付きで実行する(pytest-cov が必要)
+```bash
+cd tests
+uv run pytest --cov=../server --cov-report=html
+```
+
+## テストカバレッジ
+
+**合計 51 テスト**で、すべての API endpoint をカバーしています。
+
+### 在庫関連の endpoint(10 テスト)
+- ✓ 全在庫アイテムの取得
+- ✓ 倉庫によるフィルタリング
+- ✓ カテゴリによるフィルタリング(Power Supplies を含む)
+- ✓ 複数条件でのフィルタリング
+- ✓ ID を指定した特定アイテムの取得
+- ✓ 存在しないアイテムの処理(404)
+- ✓ フィールド構造の検証
+- ✓ データ型の検証
+
+### 注文関連の endpoint(15 テスト)
+- ✓ 全注文の取得
+- ✓ 倉庫、カテゴリ、ステータスによるフィルタリング
+- ✓ 月および四半期によるフィルタリング
+- ✓ 複数フィルターの組み合わせ
+- ✓ ID を指定した特定注文の取得
+- ✓ 存在しない注文の処理(404)
+- ✓ 注文アイテムの構造検証
+- ✓ ステータス値の検証
+- ✓ 日付フォーマットの検証
+- ✓ 合計金額の計算検証
+
+### ダッシュボード関連の endpoint(13 テスト)
+- ✓ ダッシュボードサマリーの取得
+- ✓ データ型と非負値の検証
+- ✓ 倉庫、カテゴリ、ステータス、月によるフィルタリング
+- ✓ 複数フィルターの組み合わせ
+- ✓ 計算精度の検証:
+  - 保留中注文数の計算
+  - 在庫僅少アイテム数の計算
+  - 在庫総額の計算
+
+### その他の endpoint(13 テスト)
+- **需要予測(3 テスト)**
+  - ✓ 需要予測の取得
+  - ✓ トレンド値の検証
+  - ✓ 非負値の検証
+
+- **バックログアイテム(4 テスト)**
+  - ✓ バックログアイテムの取得
+  - ✓ 優先度の値の検証
+  - ✓ 数量ロジックの検証
+  - ✓ 遅延日数の検証
+
+- **支出データ(4 テスト)**
+  - ✓ 支出サマリーの取得
+  - ✓ 月次支出の取得
+  - ✓ カテゴリ別支出の取得
+  - ✓ 直近の取引履歴の取得
+
+- **ルート endpoint(2 テスト)**
+  - ✓ API 情報 endpoint
+  - ✓ レスポンス構造の検証
+
+## テストの特徴
+
+- **FastAPI TestClient**: FastAPI 組み込みのテストクライアントを使った、高速で独立性の高いテストです
+- **Fixture**: 再利用可能な fixture を `conftest.py` にまとめています
+- **包括的な検証**: データ構造、型、計算結果、ビジネスロジックまで確認します
+- **フィルターのテスト**: すべてのフィルターの組み合わせとエッジケースを検証します
+- **エラーハンドリング**: 404 レスポンスやエッジケースもテストします
+- **新機能への対応**: Power Supplies カテゴリのテストも含まれています
+
+## 依存パッケージ
+
+テストの実行には以下のパッケージが必要です(`uv sync` で自動的にインストールされます)。
+- pytest >= 8.0.0
+- pytest-asyncio >= 0.23.0
+- httpx >= 0.27.0
+- pytest-cov >= 4.1.0(任意。カバレッジレポート用)
+
+## 新しいテストの追加
+
+1. `tests/backend/` に `test_*.py` という命名規則でテストファイルを作成します
+2. conftest.py の `client` fixture を利用します
+3. テストクラスを作成します(必須ではありませんが、整理のため推奨します)
+4. `test_` で始まるテスト関数を書きます
+5. テストを実行して動作を確認します
+
+例:
+```python
+class TestNewEndpoint:
+    def test_new_feature(self, client):
+        response = client.get("/api/new-endpoint")
+        assert response.status_code == 200
+        data = response.json()
+        assert "expected_field" in data
+```
+
+## CI/CD との連携
+
+CI/CD パイプラインに組み込む場合の例です。
+
+```yaml
+# Example GitHub Actions
+- name: Run API Tests
+  run: |
+    cd tests
+    uv run pytest -v --tb=short
+```
+
+## 補足
+
+- すべてのテストはインメモリの mock データを使用します(データベースは不要です)
+- 各テストは独立しており、任意の順序で実行できます
+- アプリのライフサイクルは FastAPI TestClient が自動的に管理します
+- テストは約 0.13 秒で完了します
