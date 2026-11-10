@@ -15,10 +15,10 @@
             <div class="kpi-header">
               <span class="kpi-label">{{ t('dashboard.kpi.inventoryTurnover') }}</span>
             </div>
-            <div class="kpi-value">4.2</div>
-            <div class="kpi-goal">{{ t('dashboard.kpi.goal') }}: 4.5 (-6.67%)</div>
+            <div class="kpi-value">{{ formatMetric(inventoryTurnover, 2) }}</div>
+            <div class="kpi-goal">{{ t('dashboard.kpi.goal') }}: {{ inventoryTurnoverGoal.toFixed(2) }} ({{ formatDelta(inventoryTurnover, inventoryTurnoverGoal) }})</div>
             <div class="kpi-progress-bar">
-              <div class="kpi-progress" style="width: 93.33%"></div>
+              <div class="kpi-progress" :style="{ width: progressWidth(inventoryTurnover, inventoryTurnoverGoal) }"></div>
             </div>
           </div>
 
@@ -29,7 +29,7 @@
             <div class="kpi-value">{{ ordersData.fulfilled }}</div>
             <div class="kpi-goal">{{ t('dashboard.kpi.goal') }}: {{ ordersData.goal }} ({{ calculatePercentage(ordersData.fulfilled, ordersData.goal) }}%)</div>
             <div class="kpi-progress-bar">
-              <div class="kpi-progress" :style="{ width: calculatePercentage(ordersData.fulfilled, ordersData.goal) + '%' }"></div>
+              <div class="kpi-progress" :style="{ width: progressWidth(ordersData.fulfilled, ordersData.goal) }"></div>
             </div>
           </div>
 
@@ -37,10 +37,10 @@
             <div class="kpi-header">
               <span class="kpi-label">{{ t('dashboard.kpi.orderFillRate') }}</span>
             </div>
-            <div class="kpi-value">{{ fillRate }}%</div>
-            <div class="kpi-goal">{{ t('dashboard.kpi.goal') }}: 95% ({{ fillRate - 95 > 0 ? '+' : '' }}{{ (fillRate - 95).toFixed(2) }}%)</div>
+            <div class="kpi-value">{{ fillRate === null ? '—' : formatMetric(fillRate) + '%' }}</div>
+            <div class="kpi-goal">{{ t('dashboard.kpi.goal') }}: {{ FILL_RATE_GOAL }}% ({{ formatDeltaPt(fillRate, FILL_RATE_GOAL) }})</div>
             <div class="kpi-progress-bar">
-              <div class="kpi-progress success" :style="{ width: (fillRate / 95 * 100) + '%' }"></div>
+              <div class="kpi-progress success" :style="{ width: progressWidth(fillRate, FILL_RATE_GOAL) }"></div>
             </div>
           </div>
 
@@ -59,10 +59,10 @@
             <div class="kpi-header">
               <span class="kpi-label">{{ t('dashboard.kpi.avgProcessingTime') }}</span>
             </div>
-            <div class="kpi-value">2.8</div>
-            <div class="kpi-goal">{{ t('dashboard.kpi.goal') }}: 3.0 (-6.67%)</div>
+            <div class="kpi-value">{{ formatMetric(avgProcessingTime) }}</div>
+            <div class="kpi-goal">{{ t('dashboard.kpi.goal') }}: {{ PROCESSING_TIME_GOAL.toFixed(1) }} ({{ formatDelta(avgProcessingTime, PROCESSING_TIME_GOAL) }})</div>
             <div class="kpi-progress-bar">
-              <div class="kpi-progress success" style="width: 93.33%"></div>
+              <div class="kpi-progress success" :style="{ width: progressWidth(avgProcessingTime, PROCESSING_TIME_GOAL) }"></div>
             </div>
           </div>
         </div>
@@ -130,7 +130,7 @@
                 </div>
                 <div class="health-metric">
                   <div class="health-metric-label">{{ t('dashboard.orderHealth.avgFulfillmentDays') }}</div>
-                  <div class="health-metric-value">{{ orderHealthMetrics.avgFulfillmentDays.toFixed(1) }}</div>
+                  <div class="health-metric-value">{{ formatMetric(orderHealthMetrics.avgFulfillmentDays) }}</div>
                 </div>
               </div>
             </div>
@@ -337,8 +337,90 @@ export default {
       getCurrentFilters
     } = useFilters()
 
-    const ordersData = ref({ fulfilled: 187, goal: 200 })
-    const fillRate = ref(96.8)
+    // KPI の目標値。件数と「期間あたりの率」は期間フィルターに応じて按分し、
+    // 比率(%)と日数は按分しない。
+    const ANNUAL_ORDERS_GOAL = 200
+    const ANNUAL_TURNOVER_GOAL = 4.5
+    const FILL_RATE_GOAL = 95
+    const PROCESSING_TIME_GOAL = 3.0
+    const MONTHS_PER_YEAR = 12
+
+    // ステータス文字列はここにまとめ、綴り違いを防ぐ
+    const STATUS = {
+      delivered: 'delivered',
+      shipped: 'shipped',
+      processing: 'processing',
+      backordered: 'backordered'
+    }
+    const FULFILLED_STATUSES = [STATUS.delivered, STATUS.shipped]
+
+    // 外部データの status は欠損しうるので、必ずこのヘルパー経由で読む
+    const normalizeStatus = (order) => (order?.status ?? '').toLowerCase()
+
+    const periodDivisor = computed(() =>
+      selectedPeriod.value === 'all' ? 1 : MONTHS_PER_YEAR
+    )
+
+    // 充足済み = 配送済み または 出荷済み
+    const fulfilledOrders = computed(() =>
+      allOrders.value.filter(o => FULFILLED_STATUSES.includes(normalizeStatus(o)))
+    )
+
+    const ordersData = computed(() => ({
+      fulfilled: fulfilledOrders.value.length,
+      goal: Math.max(1, Math.round(ANNUAL_ORDERS_GOAL / periodDivisor.value))
+    }))
+
+    // 算出できないとき(対象0件)は null を返す。
+    // 「実績が0」と「データがない」を区別し、テンプレートでは — と表示する。
+    const fillRate = computed(() => {
+      if (allOrders.value.length === 0) return null
+      return (fulfilledOrders.value.length / allOrders.value.length) * 100
+    })
+
+    // 在庫回転率(数量ベース): 絞り込み後の期間内 出荷数量合計 ÷ 現在庫数量合計。
+    // 「全期間」なら年間値、月で絞れば月次値になり、目標の按分と整合する。
+    const inventoryTurnover = computed(() => {
+      const onHand = inventoryItems.value.reduce((sum, i) => sum + (i.quantity_on_hand || 0), 0)
+      if (onHand === 0) return null
+      const shippedQty = allOrders.value.reduce(
+        (sum, o) => sum + (o.items || []).reduce((s, it) => s + (it.quantity || 0), 0),
+        0
+      )
+      return shippedQty / onHand
+    })
+
+    const inventoryTurnoverGoal = computed(() =>
+      ANNUAL_TURNOVER_GOAL / periodDivisor.value
+    )
+
+    const NO_DATA = '—'
+
+    // 指標値の表示。算出不能(null)なら — を返す
+    const formatMetric = (value, digits = 1) =>
+      value === null ? NO_DATA : value.toFixed(digits)
+
+    // 目標に対する差分を "+x.xx%" / "-x.xx%" で表示する
+    const formatDelta = (value, goal) => {
+      if (value === null || !goal) return NO_DATA
+      const pct = (value / goal - 1) * 100
+      return `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`
+    }
+
+    // 比率どうしの差はパーセントポイントで表示する
+    const formatDeltaPt = (value, goal) => {
+      if (value === null) return NO_DATA
+      const diff = value - goal
+      return `${diff > 0 ? '+' : ''}${diff.toFixed(2)}pt`
+    }
+
+    // 進捗バーの幅。0 除算を避け、100% で頭打ちにする。
+    // 「小さいほど良い」指標(平均処理日数)でもバーは value/goal で伸びるため、
+    // 目標超過は満タン表示になる。数値と差分の表示で判断する前提。
+    const progressWidth = (value, goal) => {
+      if (value === null || !goal) return '0%'
+      return `${Math.min((value / goal) * 100, 100)}%`
+    }
 
     const revenueGoal = computed(() => {
       // $800K per month, so if looking at all months (12 months), goal is 12 * 800K = 9.6M
@@ -359,7 +441,7 @@ export default {
     const statusData = computed(() => {
       const counts = { delivered: 0, shipped: 0, processing: 0, backordered: 0 }
       allOrders.value.forEach(order => {
-        const status = order.status.toLowerCase()
+        const status = normalizeStatus(order)
         if (counts[status] !== undefined) counts[status]++
       })
       return counts
@@ -371,7 +453,7 @@ export default {
       const avgOrderValue = totalOrders > 0 ? totalValue / totalOrders : 0
 
       // Calculate on-time delivery rate (delivered orders that arrived on or before expected date)
-      const deliveredOrders = allOrders.value.filter(o => o.status.toLowerCase() === 'delivered')
+      const deliveredOrders = allOrders.value.filter(o => normalizeStatus(o) === STATUS.delivered)
       const onTimeDeliveries = deliveredOrders.filter(o => {
         if (o.actual_delivery && o.expected_delivery) {
           return new Date(o.actual_delivery) <= new Date(o.expected_delivery)
@@ -388,11 +470,15 @@ export default {
           const orderDate = new Date(o.order_date)
           const deliveryDate = new Date(o.actual_delivery)
           const days = Math.round((deliveryDate - orderDate) / (1000 * 60 * 60 * 24))
-          totalDays += days
-          countWithDates++
+          // 不正な日付は NaN になるので、集計から除外する
+          if (Number.isFinite(days)) {
+            totalDays += days
+            countWithDates++
+          }
         }
       })
-      const avgFulfillmentDays = countWithDates > 0 ? totalDays / countWithDates : 0
+      // 配送済みが0件のときは null（算出不能）。0 を返すと「目標より速い」と誤読される
+      const avgFulfillmentDays = countWithDates > 0 ? totalDays / countWithDates : null
 
       return {
         totalOrders,
@@ -402,6 +488,9 @@ export default {
         avgFulfillmentDays
       }
     })
+
+    // 平均処理日数: 受注日から実配送日までの日数（orderHealthMetrics から取得）
+    const avgProcessingTime = computed(() => orderHealthMetrics.value.avgFulfillmentDays)
 
     const categoryData = computed(() => {
       // Group inventory by category and calculate values
@@ -561,9 +650,10 @@ export default {
     const loadData = async () => {
       try {
         loading.value = true
+        error.value = null
         const filters = getCurrentFilters()
 
-        const [summaryData, ordersData, inventoryData, backlogData] = await Promise.all([
+        const [summaryData, ordersResponse, inventoryData, backlogData] = await Promise.all([
           api.getDashboardSummary(filters),
           api.getOrders(filters),
           api.getInventory(filters),
@@ -571,7 +661,7 @@ export default {
         ])
 
         summary.value = summaryData
-        allOrders.value = ordersData
+        allOrders.value = ordersResponse
         inventoryItems.value = inventoryData
         allBacklogItems.value = backlogData
       } catch (err) {
@@ -582,6 +672,7 @@ export default {
     }
 
     const calculatePercentage = (value, goal) => {
+      if (!goal) return '0.00'
       return ((value / goal) * 100).toFixed(2)
     }
 
@@ -686,6 +777,15 @@ export default {
       summary,
       ordersData,
       fillRate,
+      FILL_RATE_GOAL,
+      PROCESSING_TIME_GOAL,
+      inventoryTurnover,
+      inventoryTurnoverGoal,
+      avgProcessingTime,
+      formatMetric,
+      formatDelta,
+      formatDeltaPt,
+      progressWidth,
       statusData,
       orderHealthMetrics,
       categoryData,
