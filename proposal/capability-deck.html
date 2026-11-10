@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ケイパビリティ・プレゼンテーション — FPT ソフトウェア ／ RFP MC-2026-0417</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --surface-1:#fcfcfb; --surface-2:#f4f4f1; --surface-3:#ebebe6;
+  --rule:#dcdcd5; --rule-strong:#b9b9ae;
+  --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#84837c;
+  --accent:#2a78d6; --accent-soft:#eaf2fd;
+  /* 提案書と同じオーディナル青ランプ（light/ordinal 検証済み） */
+  --ph1:#86b6ef; --ph2:#5598e7; --ph3:#2a78d6; --ph4:#184f95;
+  --W:1280px; --H:720px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#2a2a28;overflow:hidden}
+body{
+  font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  color:var(--ink);font-feature-settings:"palt" 1;-webkit-font-smoothing:antialiased;
+}
+#stage{position:fixed;inset:0;display:grid;place-items:center}
+.slide{
+  width:var(--W);height:var(--H);background:var(--surface-1);
+  padding:64px 72px;position:absolute;display:none;
+  transform:scale(var(--s,1));transform-origin:center center;
+  box-shadow:0 10px 60px rgba(0,0,0,.4);
+  flex-direction:column;
+}
+.slide.on{display:flex}
+
+/* ---- slide furniture ---- */
+.eyebrow{
+  font-size:14px;font-weight:700;letter-spacing:.16em;color:var(--accent);
+  margin:0 0 20px;text-transform:none;
+}
+h1{font-size:62px;font-weight:700;line-height:1.3;margin:0 0 20px;letter-spacing:-.02em}
+h2{font-size:40px;font-weight:700;line-height:1.38;margin:0 0 26px;letter-spacing:-.01em}
+.lead{font-size:22px;line-height:1.75;color:var(--ink-2);margin:0 0 20px;max-width:950px}
+.lead strong{color:var(--ink);font-weight:700}
+.big{font-size:30px;line-height:1.6;font-weight:500;margin:0 0 18px}
+.big strong{color:var(--accent)}
+.foot{
+  margin-top:auto;padding-top:22px;border-top:1px solid var(--rule);
+  font-size:15px;color:var(--ink-3);display:flex;justify-content:space-between;align-items:baseline;
+}
+.foot .n{font-variant-numeric:tabular-nums}
+
+/* ---- bits ---- */
+.cols{display:grid;gap:26px;flex:1;min-height:0}
+.c2{grid-template-columns:1fr 1fr}
+.c3{grid-template-columns:repeat(3,1fr)}
+.card{
+  border:1px solid var(--rule);border-radius:8px;padding:24px 26px;background:var(--surface-1);
+  display:flex;flex-direction:column;
+}
+.card.fill{background:var(--surface-2);border-color:var(--rule)}
+.card.hi{background:var(--accent-soft);border-color:#bcd8f7}
+.card h3{font-size:21px;font-weight:700;margin:0 0 12px;line-height:1.45}
+.card h3 .tag{display:block;font-size:14px;font-weight:400;color:var(--ink-3);margin-top:5px}
+.card p{font-size:16px;line-height:1.8;color:var(--ink-2);margin:0 0 10px}
+.card p:last-child{margin-bottom:0}
+.card .rel{font-size:14px;color:var(--ink-3);border-top:1px dashed var(--rule);padding-top:10px;margin-top:auto}
+.kicker{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--accent);margin:0 0 8px}
+
+ul.pts{margin:0;padding:0;list-style:none}
+ul.pts li{
+  font-size:20px;line-height:1.7;color:var(--ink-2);
+  padding-left:30px;position:relative;margin-bottom:16px;
+}
+ul.pts li::before{
+  content:"";position:absolute;left:0;top:.62em;
+  width:9px;height:9px;border-radius:2px;background:var(--accent);
+}
+ul.pts li strong{color:var(--ink);font-weight:700}
+
+table{width:100%;border-collapse:collapse;font-size:16px;line-height:1.65}
+th,td{padding:11px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
+thead th{background:var(--surface-3);font-size:14px;font-weight:700;color:var(--ink-2);letter-spacing:.03em}
+td code,p code,li code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;
+  background:var(--surface-3);padding:1px 5px;border-radius:3px;
+}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nw{white-space:nowrap}
+
+/* hero number */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin:4px 0 8px}
+.stat{border-left:3px solid var(--accent);padding:4px 0 4px 20px}
+.stat .v{font-size:46px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat .k{font-size:15px;color:var(--ink-3);margin-top:7px;line-height:1.5}
+
+/* gantt */
+.gantt{display:flex;flex-direction:column;gap:3px}
+.grow{display:grid;grid-template-columns:230px 1fr 118px;gap:0 16px;align-items:center}
+.gwk{display:grid;grid-template-columns:repeat(14,1fr);font-size:12px;color:var(--ink-3);
+  border-bottom:1px solid var(--rule);padding-bottom:5px;margin-bottom:9px;font-variant-numeric:tabular-nums}
+.gwk span{text-align:center}
+.glab{font-size:16px;font-weight:500;line-height:1.4;padding:7px 0}
+.glab .wk{display:block;font-size:13px;color:var(--ink-3);font-weight:400}
+.gtrack{display:grid;grid-template-columns:repeat(14,1fr);padding:7px 0}
+.bar{height:13px;border-radius:5px;box-shadow:0 0 0 2px var(--surface-1)}
+.bar[data-ph="1"]{background:var(--ph1)}
+.bar[data-ph="2"]{background:var(--ph2)}
+.bar[data-ph="3"]{background:var(--ph3)}
+.bar[data-ph="4"]{background:var(--ph4)}
+.gval{text-align:right;font-size:16px;font-weight:500;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.gms{display:grid;grid-template-columns:repeat(14,1fr);margin-top:9px;border-top:1px solid var(--rule);padding-top:9px}
+.ms{font-size:12px;color:var(--ink-2);line-height:1.45;text-align:right}
+.ms::before{content:"\25B2";display:block;color:var(--accent);font-size:9px;margin-bottom:2px}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:9px;vertical-align:baseline}
+
+/* title slide */
+.slide.title{background:var(--ink);color:var(--surface-1);justify-content:center}
+.slide.title h1{color:#fff;font-size:64px}
+.slide.title .eyebrow{color:#7fb2f0}
+.slide.title .lead{color:#c9c8c2}
+.slide.title .foot{border-top-color:#3a3a36;color:#8b8a83}
+.slide.title .meta{display:flex;gap:48px;margin-top:34px;font-size:17px;color:#c9c8c2}
+.slide.title .meta b{display:block;font-size:13px;color:#8b8a83;font-weight:500;margin-bottom:5px;letter-spacing:.05em}
+
+/* closing slide */
+.slide.closing{background:var(--ink);color:var(--surface-1);justify-content:center}
+.slide.closing h2{color:#fff;font-size:46px}
+.slide.closing .lead{color:#c9c8c2}
+.slide.closing ul.pts li{color:#c9c8c2}
+.slide.closing ul.pts li strong{color:#fff}
+.slide.closing ul.pts li::before{background:#7fb2f0}
+.slide.closing .foot{border-top-color:#3a3a36;color:#8b8a83}
+.slide.closing .contact{margin-top:30px;font-size:18px;line-height:1.8;color:#c9c8c2}
+.slide.closing .contact b{color:#fff}
+
+/* ---- chrome ---- */
+#hud{
+  position:fixed;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.14);z-index:40;
+}
+#bar{height:100%;width:0;background:var(--accent);transition:width .22s ease}
+#help{
+  position:fixed;right:14px;bottom:14px;z-index:41;color:#9a9a93;font-size:12px;
+  background:rgba(0,0,0,.5);padding:6px 11px;border-radius:5px;letter-spacing:.03em;
+  opacity:0;transition:opacity .25s;pointer-events:none;
+}
+#help.show{opacity:1}
+
+/* overview */
+#ov{
+  position:fixed;inset:0;background:#201f1e;z-index:50;display:none;
+  overflow:auto;padding:30px;
+}
+#ov.on{display:block}
+#ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:18px;max-width:1500px;margin:0 auto}
+.th{position:relative;cursor:pointer;border-radius:5px;overflow:hidden;background:#fff;
+  aspect-ratio:16/9;outline:2px solid transparent;transition:outline-color .15s}
+.th:hover,.th.cur{outline-color:var(--accent)}
+.th .wrap{width:var(--W);height:var(--H);transform:scale(.19);transform-origin:top left;pointer-events:none}
+.th .no{position:absolute;left:0;bottom:0;background:rgba(0,0,0,.72);color:#fff;
+  font-size:12px;padding:3px 8px;border-radius:0 5px 0 0;font-variant-numeric:tabular-nums}
+
+/* notes */
+#notes{
+  position:fixed;left:0;right:0;bottom:0;max-height:38%;overflow:auto;z-index:45;
+  background:rgba(12,12,11,.96);color:#ddddd6;padding:20px 28px;display:none;
+  font-size:15px;line-height:1.8;border-top:2px solid var(--accent);
+}
+#notes.on{display:block}
+#notes h4{margin:0 0 8px;font-size:12px;letter-spacing:.12em;color:#7fb2f0;font-weight:700}
+
+/* print: 1 slide per page */
+@page{size:1280px 720px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #stage{position:static;display:block}
+  #hud,#help,#ov,#notes{display:none !important}
+  .slide{
+    display:flex !important;position:static;transform:none !important;
+    box-shadow:none !important;break-after:page;page-break-after:always;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide title" data-notes="冒頭30秒で「私たちは数字の信頼を取り戻しに来た」と位置づける。技術の話は後。">
+  <p class="eyebrow">ケイパビリティ・プレゼンテーション ／ RFP MC-2026-0417</p>
+  <h1>信頼できる数字を、<br>3週間で。</h1>
+  <p class="lead">在庫管理ダッシュボードのモダナイズおよび機能拡張</p>
+  <div class="meta">
+    <div><b>提出先</b>Meridian Components, Inc.</div>
+    <div><b>提出者</b>FPT ソフトウェア</div>
+    <div><b>日付</b>2026年5月7日</div>
+  </div>
+  <div class="foot"><span>FPT ソフトウェア</span><span class="n"></span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-notes="Tanaka 様に向けた一枚。課題の再定義。ここで「分かっている」と思ってもらえるかが勝負。">
+  <p class="eyebrow">私たちの理解</p>
+  <h2>課題は、ダッシュボードが<br>動かないことではありません。</h2>
+  <p class="big"><strong>オペレーションチームが、画面に出ている数字を信用できないこと</strong>です。</p>
+  <p class="lead">期間や拠点を切り替えても概要ページの指標が変わらない以上、チームが表計算ソフトで集計をやり直すのは合理的な判断です。</p>
+  <div class="foot"><span>私たちの理解</span><span class="n"></span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-notes="IT 部門に向けた一枚。R4 が全体の前提条件であることを、こちらから先に言う。">
+  <p class="eyebrow">私たちの理解</p>
+  <h2>そしてもう一つ、膠着があります。</h2>
+  <div class="cols c3">
+    <div class="card fill">
+      <p class="kicker">現状</p>
+      <h3>テストがない</h3>
+      <p>自動テストが一切整備されていないため、IT 部門は変更の影響範囲を判断できません。</p>
+    </div>
+    <div class="card fill">
+      <p class="kicker">結果</p>
+      <h3>変更が止まる</h3>
+      <p>IT 部門は承認に慎重にならざるを得ず、改修そのものが前に進みません。</p>
+    </div>
+    <div class="card hi">
+      <p class="kicker">つまり</p>
+      <h3>直そうとするほど、<br>通らなくなる</h3>
+      <p>R4（テスト）は4つの必須項目のひとつではなく、<strong>他のすべてを前に進めるための前提条件</strong>だと理解しています。</p>
+    </div>
+  </div>
+  <div class="foot"><span>私たちの理解</span><span class="n"></span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-notes="最大の差別化。『コードを読んだ上で見積もった』ことの証拠。ここは時間をかけて話す。">
+  <p class="eyebrow">事前調査</p>
+  <h2>同梱いただいたコードを、実際に読みました。</h2>
+  <p class="lead">引き継ぎ資料（<code>vendor-handoff.md</code>）の記述と、実装は3点食い違っています。</p>
+  <table>
+    <thead><tr><th style="width:30%">引き継ぎ資料の記述</th><th style="width:42%">実際のコード</th><th>見積もりへの影響</th></tr></thead>
+    <tbody>
+      <tr><td>i18n への言及なし</td><td><code>useI18n.js</code>、en／ja ロケール計710行が<strong>実装済み</strong>。主要5ビューは対応済み</td><td><strong>D2 のコストが大幅減</strong></td></tr>
+      <tr><td>「Reports は開発途中。フィルターの一部が未接続」</td><td>加えて、Reports.vue のみ i18n 未対応・唯一 <code>api.js</code> を経由せず <code>axios</code> 直叩き</td><td>R2 の作業内容が具体化</td></tr>
+      <tr><td>「一部のビューは旧パターンのまま。移行は未完了」</td><td><strong>全7ビュー・全コンポーネントが Options API</strong>。<code>&lt;script setup&gt;</code> は0件</td><td>移行は「未着手」。スコープ外として明示</td></tr>
+    </tbody>
+  </table>
+  <div class="foot"><span>事前調査で判明した事実</span><span class="n"></span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-notes="D2 の発見は提案の説得力そのもの。『資料にないことまで調べた』証拠として使う。">
+  <p class="eyebrow">事前調査</p>
+  <h2>国際化対応は、すでに大部分が実装されていました。</h2>
+  <div class="cols c2">
+    <div class="card">
+      <p class="kicker">対応済み</p>
+      <h3>主要5ビュー＋フィルター</h3>
+      <p>Dashboard・Spending・Inventory・Demand・Orders、および FilterBar。<code>useI18n.js</code> と en／ja ロケール（計710行）、言語切替 UI も実装済みです。</p>
+    </div>
+    <div class="card hi">
+      <p class="kicker">未対応（＝残作業）</p>
+      <h3>2ビュー＋モーダル4種</h3>
+      <p><code>Reports.vue</code> と <code>Backlog.vue</code>、および詳細モーダル4種（<code>useI18n</code> を import しながら一度も呼んでいない）。</p>
+      <p class="rel">D2 は「残りのモジュールへ拡張する新規開発」ではなく、<strong>既存基盤の穴を埋める作業</strong>です。</p>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:22px">だから D2（i18n）と D3（ダークモード）を、<strong>追加費用なしで本体スコープに含められます。</strong>東京拠点12名が英語画面で業務している状況は、想定よりはるかに小さいコストで解消できます。</p>
+  <div class="foot"><span>事前調査で判明した事実</span><span class="n"></span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-notes="提案の核。ここだけ覚えて帰ってもらえればよい一枚。">
+  <p class="eyebrow">提案の核</p>
+  <h2>最初の3週間で、<br>2つだけ納品します。</h2>
+  <div class="cols c2">
+    <div class="card hi">
+      <p class="kicker">1</p>
+      <h3>概要ページの修正<span class="tag">R1</span></h3>
+      <p>すべての KPI が、期間・拠点フィルターの選択を正しく反映するようにします。オペレーションチームが最も困っている点を、最短で解消します。</p>
+    </div>
+    <div class="card hi">
+      <p class="kicker">2</p>
+      <h3>その範囲を守る自動テスト<span class="tag">R4 の第一歩</span></h3>
+      <p>E2E テストの実行基盤を構築し、概要ページのフィルター挙動を保護します。IT 部門に、変更がテストで保証されることを実物で示します。</p>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:22px">スコープを意図的に小さく切りました。<strong>信頼を言葉ではなく、動くものと緑のテストで証明してから次に進みます。</strong></p>
+  <div class="foot"><span>提案の核</span><span class="n"></span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-notes="全体像。各フェーズが単独で価値を持つことを強調。前任ベンダーとの対比はここで匂わせる。">
+  <p class="eyebrow">アプローチ</p>
+  <h2>14週間を、4つの独立したフェーズに。</h2>
+  <div class="gantt">
+    <div class="grow">
+      <div></div>
+      <div class="gwk"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span></div>
+      <div></div>
+    </div>
+    <div class="grow">
+      <div class="glab">フェーズ1　信頼の回復<span class="wk">R1 ・ テスト基盤</span></div>
+      <div class="gtrack"><div class="bar" data-ph="1" style="grid-column:1 / span 3"></div></div>
+      <div class="gval">32,000 USD</div>
+    </div>
+    <div class="grow">
+      <div class="glab">フェーズ2　Reports と日本語化<span class="wk">R2 ・ D2</span></div>
+      <div class="gtrack"><div class="bar" data-ph="2" style="grid-column:4 / span 4"></div></div>
+      <div class="gval">46,000 USD</div>
+    </div>
+    <div class="grow">
+      <div class="glab">フェーズ3　発注推奨機能<span class="wk">R3</span></div>
+      <div class="gtrack"><div class="bar" data-ph="3" style="grid-column:8 / span 4"></div></div>
+      <div class="gval">44,000 USD</div>
+    </div>
+    <div class="grow">
+      <div class="glab">フェーズ4　仕上げと引き継ぎ<span class="wk">R4 ・ R5 ・ D3</span></div>
+      <div class="gtrack"><div class="bar" data-ph="4" style="grid-column:12 / span 3"></div></div>
+      <div class="gval">26,000 USD</div>
+    </div>
+    <div class="grow">
+      <div></div>
+      <div class="gms">
+        <div class="ms" style="grid-column:1 / span 3">概要ページ修正<br>テスト基盤稼働</div>
+        <div class="ms" style="grid-column:4 / span 4">Reports 修正完了<br>日本語化完了</div>
+        <div class="ms" style="grid-column:8 / span 4">発注推奨機能<br>リリース</div>
+        <div class="ms" style="grid-column:12 / span 3">全納品物の<br>引き継ぎ完了</div>
+      </div>
+      <div></div>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:20px">各フェーズ終了時点で、御社は<strong>次へ進むかどうかを判断できます。</strong>中断されても、それまでの納品物は単独で動作し、テストに保護された状態で残ります。</p>
+  <div class="foot"><span>アプローチ</span><span class="n"></span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-notes="『直った』の定義を先に合意する、という考え方を売る。検収条件とテストが同じものになる点が効く。">
+  <p class="eyebrow">R1 ／ 概要ページの改修</p>
+  <h2>「直った」の定義を、先に合意します。</h2>
+  <div class="cols c2">
+    <div class="card">
+      <ul class="pts">
+        <li>概要ページの全 KPI を棚卸しし、<strong>「どのフィルターに反応すべきか」の期待値表</strong>を御社と合意する</li>
+        <li>各 KPI について、Vue → <code>api.js</code> → FastAPI → 集計 → computed のどこで経路が切れているかを特定する</li>
+        <li>修正し、同じ原因が他ビューに及んでいないか横展開で確認する</li>
+        <li><strong>期待値表をそのまま E2E テストに落とす</strong></li>
+      </ul>
+    </div>
+    <div class="card hi">
+      <h3>この表が、3つを同時に満たします</h3>
+      <ul class="pts" style="margin-top:6px">
+        <li><strong>作業の仕様</strong>　何を直すのか</li>
+        <li><strong>検収の条件</strong>　何をもって完了か</li>
+        <li><strong>テストケース</strong>　今後何を守り続けるか</li>
+      </ul>
+      <p class="rel"><code>Dashboard.vue</code> は1,271行と大きく、指標ごとに実装経路が異なる可能性があるため、指標を1つずつ潰します。</p>
+    </div>
+  </div>
+  <div class="foot"><span>R1 ／ 概要ページの改修</span><span class="n"></span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-notes="R2 は固定報酬のリスク源。前提条件の置き方をここで明示して安心させる。R3 は Tanaka 様の要望。">
+  <p class="eyebrow">R2・R3</p>
+  <h2>Reports の修正と、発注推奨機能。</h2>
+  <div class="cols c2">
+    <div class="card">
+      <p class="kicker">R2 ／ Reports モジュール</p>
+      <h3>調査結果は、すでに3件</h3>
+      <ul class="pts" style="font-size:17px">
+        <li><strong>国際化対応の不備</strong>　i18n 未対応</li>
+        <li><strong>実装の逸脱</strong>　唯一 <code>axios</code> 直叩きで、フィルター状態の共有機構から外れている</li>
+        <li><strong>データパターンの不整合</strong>　quarterly と monthly-trends を別々に取得</li>
+      </ul>
+      <p class="rel">御社記録の8件のリストを着手前に突き合わせ、<strong>対象を書面で確定</strong>したうえで固定報酬の範囲とします。</p>
+    </div>
+    <div class="card">
+      <p class="kicker">R3 ／ 発注推奨機能</p>
+      <h3>ブラックボックスにしません</h3>
+      <p>推奨をそのまま発注に使えるかどうかは、<strong>なぜその数量なのかが画面上で説明できるか</strong>にかかっています。各推奨行に算出根拠（現在庫・予測需要・リードタイム・不足見込み）を展開表示します。</p>
+      <p class="rel">発注点の算出式は業務ルールとして御社にご決定いただきます（フェーズ3冒頭に2時間のワークショップ）。叩き台はこちらでご用意します。</p>
+    </div>
+  </div>
+  <div class="foot"><span>R2・R3</span><span class="n"></span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-notes="IT 部門向けの決め手。『最後にまとめて書くテストは保証にならない』は刺さる論点。">
+  <p class="eyebrow">R4 ／ ブラウザテストの自動化</p>
+  <h2>テストは、最後にまとめて書きません。</h2>
+  <p class="lead">最後に書くテストは、往々にして「今の実装が通ること」を確認するだけのものになり、IT 部門が求めている保証になりません。だから<strong>フェーズ1から継続的に積み上げます。</strong></p>
+  <table>
+    <thead><tr><th class="nw" style="width:16%">フェーズ</th><th>テスト範囲</th></tr></thead>
+    <tbody>
+      <tr><td class="nw">1</td><td>実行基盤の構築（Playwright、CI 連携）＋ 概要ページのフィルター挙動</td></tr>
+      <tr><td class="nw">2</td><td>Reports モジュールの主要フロー、言語切り替え</td></tr>
+      <tr><td class="nw">3</td><td>発注推奨フロー（予算上限の指定から推奨の算出まで）</td></tr>
+      <tr><td class="nw">4</td><td>在庫・受注・支出の主要ユーザーフロー、テーマ切り替え、全体の回帰</td></tr>
+    </tbody>
+  </table>
+  <p class="lead" style="margin-top:18px">テストスイートに加え、IT 部門向けに<strong>「テストの読み方・追加の仕方」の手順書</strong>を納品します。私たちが去った後も御社で維持できることが R4 のゴールです。</p>
+  <div class="foot"><span>R4 ／ ブラウザテストの自動化</span><span class="n"></span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-notes="オフショアへの不安を先回りして潰す。テスト自動化専任が R4 の主張を体制で裏づける。">
+  <p class="eyebrow">体制</p>
+  <h2>最大6名。窓口はオンサイトの2名に一本化。</h2>
+  <div class="cols c2">
+    <div class="card">
+      <table style="font-size:15px">
+        <thead><tr><th>役割</th><th class="nw">所在</th><th>関与</th></tr></thead>
+        <tbody>
+          <tr><td>プロジェクトマネージャー</td><td class="nw">オンサイト</td><td>全期間（兼務）</td></tr>
+          <tr><td>リードエンジニア</td><td class="nw">オンサイト</td><td>全期間（フルタイム）</td></tr>
+          <tr><td>アプリケーションエンジニア ×3</td><td class="nw">オフショア</td><td>フェーズ2・3 でピーク</td></tr>
+          <tr><td>テスト自動化エンジニア ×1</td><td class="nw">オフショア</td><td>全期間（フルタイム）</td></tr>
+        </tbody>
+      </table>
+      <p class="rel">総工数 約57人週（14週間の平均で約4名、ピーク時6名）</p>
+    </div>
+    <div class="card hi">
+      <h3>テスト自動化エンジニアを<br>専任で置きます</h3>
+      <p>R4 を後工程に回さず、フェーズ1から全期間で並走させるためです。IT 部門の承認が各フェーズの出口で滞らないことを、<strong>体制の面からも担保します。</strong></p>
+      <p class="rel">フェーズを通じて同一のメンバーが担当し、途中での交代は行いません。</p>
+    </div>
+  </div>
+  <div class="foot"><span>体制</span><span class="n"></span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-notes="IT 部門向けの実績2件。どちらも『既存システムに後からテストを入れた』話であることを強調する。">
+  <p class="eyebrow">関連実績 ①　テストの自動化</p>
+  <h2>既存システムに、後からテストを入れてきました。</h2>
+  <div class="cols c2">
+    <div class="card">
+      <h3>回帰テスト自動化の段階導入<span class="tag">エンタープライズセキュリティ ／ 顧客規模非公開</span></h3>
+      <p>数百万行のコードを持ち、複数プラットフォームに対応する既存製品。頻繁な改修に伴う回帰テストの負担が課題でした。</p>
+      <p>手動テストを通じて業務フローを理解したうえで、<strong>安定したモジュールから自動化を開始</strong>。オンサイト・オフショアの6名体制でテストフレームワークを構築し、再利用可能なテストスクリプトで保守工数とコストを削減しました。</p>
+      <p class="rel">→ <strong>R4</strong>：既存システムへの段階的なテスト導入、改修に伴う回帰確認の仕組みづくり</p>
+    </div>
+    <div class="card">
+      <h3>実業務シナリオに基づく受入テストの自動化<span class="tag">国内小売・卸売 ／ 全国300店舗以上</span></h3>
+      <p>全国300店舗以上を展開する小売・卸売企業の取引管理システム。</p>
+      <p>RPA を用いて、<strong>100名が同時にシステムを利用する実業務の操作を再現</strong>し、手動で実施していた検証を自動化しました。</p>
+      <p class="rel">→ <strong>R4</strong>：実装単位ではなく、現場の利用シナリオを起点にテストと受入確認を設計する考え方</p>
+    </div>
+  </div>
+  <div class="foot"><span>関連実績 ①　テストの自動化</span><span class="n"></span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-notes="Tanaka 様向けの実績2件。事例4の数字は公開事例であることを明言すること。R3 の裏づけ。">
+  <p class="eyebrow">関連実績 ②　在庫・発注・需要予測</p>
+  <h2>この業務領域を、理解しています。</h2>
+  <div class="cols c2">
+    <div class="card">
+      <h3>流通管理システム刷新によるレポート業務の改善<span class="tag">消費財製造 ／ ベトナム大手</span></h3>
+      <p>複雑な既存システムを持つ消費財メーカーに対し、流通管理システムの刷新を支援。<strong>在庫・購買・発注などの業務を統合</strong>し、業務プロセスの定義から導入、利用者教育、稼働後支援まで対応しました。</p>
+      <p>実データに基づくレポート作成を可能にし、週次報告の作成時間短縮と予測精度の改善を実現しています。</p>
+      <p class="rel">→ <strong>R1・R2</strong>：業務データと表示・集計結果の整合性を重視する方針　／　<strong>R3</strong>：在庫・購買・発注業務への理解</p>
+    </div>
+    <div class="card hi">
+      <h3>需要予測と既存在庫システムの連携<span class="tag">国内大手調査・コンサルティング企業 ／ 医薬品領域</span></h3>
+      <p>処方量を予測する AI ソリューションを構築し、予測結果を RPA で<strong>既存在庫システムへ取り込んで</strong>在庫管理を自動化しました。</p>
+      <div class="stats" style="margin:14px 0 12px">
+        <div class="stat"><div class="v">98<span style="font-size:22px">%</span></div><div class="k">需要予測精度</div></div>
+        <div class="stat"><div class="v">4<span style="font-size:22px">%</span></div><div class="k">欠品率</div></div>
+        <div class="stat"><div class="v">8<span style="font-size:22px">%</span></div><div class="k">売れ残り在庫<br>金額削減</div></div>
+      </div>
+      <p class="rel">公開事例として報告されている数値です　→ <strong>R3</strong>：需要予測データの在庫管理への活用、既存システムを活かした機能拡張</p>
+    </div>
+  </div>
+  <div class="foot"><span>関連実績 ②　在庫・発注・需要予測</span><span class="n"></span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-notes="Okafor 様向け。予見可能性を正面から。D1 を別出しにしている点も触れる。">
+  <p class="eyebrow">スケジュールと価格</p>
+  <h2>フェーズごとの固定報酬。</h2>
+  <div class="stats">
+    <div class="stat"><div class="v">148,000<span style="font-size:22px"> USD</span></div><div class="k">総額（フェーズごとの固定報酬）</div></div>
+    <div class="stat"><div class="v">14<span style="font-size:24px">週間</span></div><div class="k">キックオフは契約締結後5営業日以内</div></div>
+    <div class="stat"><div class="v">4<span style="font-size:24px">回</span></div><div class="k">継続可否をご判断いただく区切り</div></div>
+  </div>
+  <table style="margin-top:20px">
+    <thead><tr><th style="width:30%">フェーズ</th><th class="nw" style="width:10%">期間</th><th>主な納品物</th><th class="num" style="width:16%">価格 (USD)</th></tr></thead>
+    <tbody>
+      <tr><td><span class="swatch" style="background:var(--ph1)"></span>1. 信頼の回復</td><td class="nw">3週</td><td>R1 概要ページ修正 ／ E2E テスト基盤</td><td class="num">32,000</td></tr>
+      <tr><td><span class="swatch" style="background:var(--ph2)"></span>2. Reports と日本語化</td><td class="nw">4週</td><td>R2 欠陥修正 ／ D2 i18n 完了</td><td class="num">46,000</td></tr>
+      <tr><td><span class="swatch" style="background:var(--ph3)"></span>3. 発注推奨機能</td><td class="nw">4週</td><td>R3 Restocking ビュー</td><td class="num">44,000</td></tr>
+      <tr><td><span class="swatch" style="background:var(--ph4)"></span>4. 仕上げと引き継ぎ</td><td class="nw">3週</td><td>R4 テスト完備 ／ R5 ドキュメント ／ D3</td><td class="num">26,000</td></tr>
+    </tbody>
+  </table>
+  <p class="lead" style="margin-top:16px;font-size:18px">オプション（別見積もり）: D1 UI の全面刷新 38,000 USD／5週　・　Composition API 全面移行 22,000 USD／3週</p>
+  <div class="foot"><span>スケジュールと価格</span><span class="n"></span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide closing" data-notes="締め。『意思ではなく構造で防ぐ』を言い切る。最後に連絡先を出して終わる。">
+  <p class="eyebrow">まとめ</p>
+  <h2>再発は、意思ではなく<br>契約の構造で防ぎます。</h2>
+  <ul class="pts">
+    <li>フェーズを小さく切り、<strong>各フェーズが単独で価値を持つ</strong>ように設計しました。途中で止まっても、使えるものが残ります</li>
+    <li>テストを最後にまとめず、フェーズ1から積み上げます。<strong>IT 部門の承認が後工程のボトルネックになりません</strong></li>
+    <li><strong>やらないことを先に書きました</strong>（§2.7）。やると書いたことを確実に納めるためです</li>
+  </ul>
+  <p class="lead" style="margin-top:8px">見積もりは、同梱いただいたコードを実際に読んだうえで作成しています。着手してから「思っていたのと違った」と申し上げることのないよう、分かる範囲は先に調べました。</p>
+  <div class="contact">
+    <b>FPT ソフトウェア</b>　／　Dovan Dung（開発責任者）　／　dungdv@fpt.com
+  </div>
+  <div class="foot"><span>ご質問は提出期限後も随時お受けします</span><span class="n"></span></div>
+</section>
+
+</div>
+
+<div id="hud"><div id="bar"></div></div>
+<div id="help">← → 移動　/　Esc 一覧　/　N ノート　/　F 全画面　/　P 印刷</div>
+<div id="ov"><div id="ovgrid"></div></div>
+<div id="notes"><h4>講師用ノート</h4><p id="notetext"></p></div>
+
+<script>
+(function(){
+  var slides = [].slice.call(document.querySelectorAll('.slide'));
+  var N = slides.length, i = 0;
+  var bar = document.getElementById('bar'), help = document.getElementById('help');
+  var ov = document.getElementById('ov'), ovgrid = document.getElementById('ovgrid');
+  var notes = document.getElementById('notes'), notetext = document.getElementById('notetext');
+
+  slides.forEach(function(s, k){
+    var n = s.querySelector('.foot .n');
+    if (n) n.textContent = (k+1) + ' / ' + N;
+  });
+
+  function fit(){
+    var s = Math.min(innerWidth / 1280, innerHeight / 720);
+    document.documentElement.style.setProperty('--s', s);
+  }
+  function show(k){
+    i = Math.max(0, Math.min(N-1, k));
+    slides.forEach(function(s, x){ s.classList.toggle('on', x === i); });
+    bar.style.width = ((i+1)/N*100) + '%';
+    notetext.textContent = slides[i].dataset.notes || '（ノートなし）';
+    [].forEach.call(ovgrid.children, function(t, x){ t.classList.toggle('cur', x === i); });
+    location.hash = (i+1);
+  }
+  function flash(){ help.classList.add('show'); clearTimeout(flash.t);
+    flash.t = setTimeout(function(){ help.classList.remove('show'); }, 2200); }
+
+  // overview thumbnails
+  slides.forEach(function(s, k){
+    var th = document.createElement('div'); th.className = 'th';
+    var wrap = document.createElement('div'); wrap.className = 'wrap';
+    var c = s.cloneNode(true); c.classList.add('on');
+    c.style.position = 'static'; c.style.transform = 'none'; c.style.boxShadow = 'none';
+    wrap.appendChild(c); th.appendChild(wrap);
+    var no = document.createElement('div'); no.className = 'no'; no.textContent = k+1;
+    th.appendChild(no);
+    th.onclick = function(){ ov.classList.remove('on'); show(k); };
+    ovgrid.appendChild(th);
+  });
+
+  addEventListener('resize', fit);
+  addEventListener('keydown', function(e){
+    var k = e.key;
+    if (ov.classList.contains('on')){
+      if (k === 'Escape' || k === 'q') { ov.classList.remove('on'); e.preventDefault(); }
+      return;
+    }
+    if (k === 'ArrowRight' || k === ' ' || k === 'PageDown' || k === 'j'){ show(i+1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'k'){ show(i-1); e.preventDefault(); }
+    else if (k === 'Home'){ show(0); }
+    else if (k === 'End'){ show(N-1); }
+    else if (k === 'Escape'){ ov.classList.add('on'); e.preventDefault(); }
+    else if (k === 'n' || k === 'N'){ notes.classList.toggle('on'); }
+    else if (k === 'f' || k === 'F'){
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+    }
+    else if (k === 'p' || k === 'P'){ print(); }
+  });
+  addEventListener('click', function(e){
+    if (ov.classList.contains('on')) return;
+    if (e.clientX < innerWidth * 0.25) show(i-1); else show(i+1);
+  });
+
+  fit();
+  var start = parseInt(location.hash.slice(1), 10);
+  show(isFinite(start) && start > 0 ? start-1 : 0);
+  flash();
+  if (location.search.indexOf('print') >= 0) setTimeout(print, 600);
+})();
+</script>
+</body>
+</html>

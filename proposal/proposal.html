@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>提案書 — Meridian Components 在庫管理ダッシュボード改修（RFP MC-2026-0417）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens ---------- */
+:root{
+  color-scheme: light;
+  --surface-1:#fcfcfb;
+  --surface-2:#f4f4f1;
+  --surface-3:#ebebe6;
+  --rule:#dcdcd5;
+  --rule-strong:#b9b9ae;
+  --text-primary:#0b0b0b;
+  --text-secondary:#52514e;
+  --text-muted:#84837c;
+  --accent:#2a78d6;
+  --accent-soft:#eaf2fd;
+  /* ordinal blue ramp — validated light/ordinal: all checks pass */
+  --ph1:#86b6ef; --ph2:#5598e7; --ph3:#2a78d6; --ph4:#184f95;
+  --on-ph1:#0b0b0b; --on-ph2:#ffffff; --on-ph3:#ffffff; --on-ph4:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --surface-1:#1a1a19;
+    --surface-2:#232321;
+    --surface-3:#2d2d2a;
+    --rule:#3a3a36;
+    --rule-strong:#55554e;
+    --text-primary:#f0efec;
+    --text-secondary:#c3c2b7;
+    --text-muted:#95948b;
+    --accent:#3987e5;
+    --accent-soft:#16283f;
+    /* same hue, stepped for the dark surface — validated dark/ordinal: all checks pass */
+    --ph1:#1c5cab; --ph2:#2a78d6; --ph3:#5598e7; --ph4:#86b6ef;
+    --on-ph1:#ffffff; --on-ph2:#ffffff; --on-ph3:#0b0b0b; --on-ph4:#0b0b0b;
+  }
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  font-weight:400;
+  font-size:10.5pt;
+  line-height:1.85;
+  color:var(--text-primary);
+  background:var(--surface-2);
+  font-feature-settings:"palt" 1;
+}
+.sheet{
+  max-width:200mm;
+  margin:0 auto;
+  background:var(--surface-1);
+  padding:22mm 20mm 18mm;
+  box-shadow:0 1px 3px rgba(0,0,0,.06),0 10px 40px rgba(0,0,0,.07);
+}
+
+/* ---------- cover ---------- */
+.cover{border-bottom:2px solid var(--text-primary);padding-bottom:14mm;margin-bottom:12mm}
+.eyebrow{
+  font-size:8.5pt;font-weight:700;letter-spacing:.14em;
+  color:var(--accent);margin:0 0 6mm;
+}
+.cover h1{
+  font-size:24pt;font-weight:700;line-height:1.45;
+  margin:0 0 3mm;letter-spacing:-.01em;
+}
+.cover .sub{font-size:12pt;color:var(--text-secondary);margin:0 0 10mm;font-weight:500}
+.meta{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:5mm 10mm;border-top:1px solid var(--rule);padding-top:6mm;
+}
+.meta dt{font-size:8.5pt;color:var(--text-muted);font-weight:500;margin:0 0 1mm}
+.meta dd{margin:0;font-size:10.5pt;font-weight:500;color:var(--text-primary)}
+
+/* ---------- structure ---------- */
+h2{
+  font-size:14pt;font-weight:700;margin:14mm 0 5mm;
+  padding-bottom:2.5mm;border-bottom:1px solid var(--rule-strong);
+  letter-spacing:-.005em;
+}
+h2 .num{color:var(--accent);margin-right:.5em;font-variant-numeric:tabular-nums}
+h3{font-size:11.5pt;font-weight:700;margin:9mm 0 3mm;color:var(--text-primary)}
+h4{font-size:10.5pt;font-weight:700;margin:6mm 0 2mm;color:var(--text-secondary)}
+p{margin:0 0 3.5mm;text-align:justify}
+strong{font-weight:700}
+ul,ol{margin:0 0 4mm;padding-left:5.5mm}
+li{margin-bottom:1.8mm}
+
+/* ---------- tables ---------- */
+table{
+  width:100%;border-collapse:collapse;margin:4mm 0 6mm;
+  font-size:9.5pt;line-height:1.7;
+}
+caption{
+  caption-side:top;text-align:left;font-size:9pt;font-weight:700;
+  color:var(--text-secondary);padding-bottom:2mm;
+}
+th,td{
+  padding:2.6mm 3mm;line-break:strict;text-align:left;vertical-align:top;
+  border-bottom:1px solid var(--rule);
+}
+thead th{
+  background:var(--surface-3);font-weight:700;font-size:8.5pt;
+  color:var(--text-secondary);letter-spacing:.03em;
+  border-bottom:1px solid var(--rule-strong);
+}
+tbody tr:last-child td{border-bottom:1px solid var(--rule-strong)}
+.num-col{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nw{white-space:nowrap}
+tfoot td{
+  padding:3mm;font-weight:700;background:var(--surface-2);
+  border-bottom:none;
+}
+.swatch{
+  display:inline-block;width:9px;height:9px;border-radius:2px;
+  margin-right:2.2mm;vertical-align:baseline;flex:none;
+}
+
+/* ---------- callouts ---------- */
+.callout{
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:4mm 5mm;margin:5mm 0;border-radius:0 3px 3px 0;
+}
+.callout p:last-child{margin-bottom:0}
+.callout .label{
+  font-size:8.5pt;font-weight:700;letter-spacing:.08em;
+  color:var(--accent);display:block;margin-bottom:1.5mm;
+}
+.todo{
+  background:var(--surface-3);border-left:3px solid var(--rule-strong);
+  padding:4mm 5mm;margin:5mm 0;font-size:9.5pt;color:var(--text-secondary);
+  border-radius:0 3px 3px 0;
+}
+.todo .label{
+  font-size:8.5pt;font-weight:700;letter-spacing:.08em;
+  color:var(--text-primary);display:block;margin-bottom:1.5mm;
+}
+
+/* ---------- case cards ---------- */
+.cases{display:grid;gap:4mm;margin:4mm 0 6mm}
+.case{
+  border:1px solid var(--rule);border-radius:4px;padding:4.5mm 5mm;
+  background:var(--surface-1);
+}
+.case h4{margin:0 0 2.5mm;font-size:10pt;color:var(--text-primary);line-height:1.5}
+.case h4 .tag{
+  display:block;font-size:8.5pt;font-weight:400;color:var(--text-muted);
+  margin-top:.8mm;letter-spacing:.01em;
+}
+.case p{margin:0 0 2mm;font-size:9.5pt}
+.case .rel{
+  margin:0;font-size:9pt;color:var(--text-muted);
+  border-top:1px dashed var(--rule);padding-top:2mm;
+}
+
+/* ---------- gantt ---------- */
+.figure{margin:5mm 0 7mm}
+.figure figcaption{
+  font-size:9pt;font-weight:700;color:var(--text-secondary);margin-bottom:3.5mm;
+}
+.gantt{--label-w:48mm;--value-w:20mm;--col-gap:3.5mm}
+.g-row{
+  display:grid;
+  grid-template-columns:var(--label-w) 1fr var(--value-w);
+  gap:0 var(--col-gap);align-items:center;
+}
+.g-weeks{
+  display:grid;grid-template-columns:repeat(14,1fr);
+  font-size:7.5pt;color:var(--text-muted);
+  border-bottom:1px solid var(--rule);padding-bottom:1.2mm;margin-bottom:2.5mm;
+  font-variant-numeric:tabular-nums;
+}
+.g-weeks span{text-align:center}
+.g-label{
+  font-size:8.5pt;font-weight:500;color:var(--text-primary);
+  padding:1.6mm 0;line-height:1.4;line-break:strict;
+}
+.g-label .wk{display:block;font-size:8pt;color:var(--text-muted);font-weight:400}
+.g-track{
+  display:grid;grid-template-columns:repeat(14,1fr);
+  padding:1.6mm 0;
+}
+.bar{
+  height:9px;border-radius:4px;position:relative;cursor:default;
+  /* 2px surface gap between adjacent fills */
+  box-shadow:0 0 0 2px var(--surface-1);
+}
+.bar[data-ph="1"]{background:var(--ph1)}
+.bar[data-ph="2"]{background:var(--ph2)}
+.bar[data-ph="3"]{background:var(--ph3)}
+.bar[data-ph="4"]{background:var(--ph4)}
+.g-value{
+  text-align:right;font-size:8.5pt;font-weight:500;color:var(--text-secondary);
+  white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+/* hover layer */
+.bar[data-tip]:hover::after{
+  content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:0;
+  background:var(--text-primary);color:var(--surface-1);
+  font-size:8.5pt;line-height:1.5;font-weight:400;
+  padding:2mm 3mm;border-radius:3px;white-space:pre;z-index:10;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none;
+}
+.bar-end[data-tip]:hover::after{left:auto;right:0}
+.g-ms{
+  display:grid;grid-template-columns:repeat(14,1fr);
+  margin-top:3mm;border-top:1px solid var(--rule);padding-top:2.5mm;
+}
+.ms{font-size:7pt;color:var(--text-secondary);line-height:1.45;text-align:right;line-break:strict}
+.ms::before{
+  content:"\25B2";display:block;color:var(--accent);font-size:6pt;margin-bottom:.5mm;
+}
+
+/* ---------- misc ---------- */
+.closing{
+  margin-top:12mm;padding-top:6mm;border-top:2px solid var(--text-primary);
+  font-size:9.5pt;color:var(--text-secondary);
+}
+.closing strong{color:var(--text-primary)}
+.contact-label{
+  font-size:8.5pt;font-weight:700;letter-spacing:.1em;
+  color:var(--text-muted);margin:0 0 2.5mm;
+}
+.contact-body{margin:0 0 3mm;font-size:10.5pt;line-height:1.75;color:var(--text-primary)}
+.contact-body a{color:var(--accent);text-decoration:none}
+.contact-note{margin:0;font-size:9.5pt;color:var(--text-secondary)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* ---------- print ---------- */
+@page{size:A4;margin:16mm 15mm}
+@media print{
+  :root{
+    color-scheme:light;
+    --surface-1:#fff;--surface-2:#f4f4f1;--surface-3:#eeeeea;
+    --rule:#d5d5cd;--rule-strong:#a8a89e;
+    --text-primary:#000;--text-secondary:#3f3e3c;--text-muted:#6e6d67;
+    --accent:#1c5cab;--accent-soft:#eef4fc;
+    --ph1:#86b6ef;--ph2:#5598e7;--ph3:#2a78d6;--ph4:#184f95;
+  }
+  body{background:#fff;font-size:9.5pt}
+  .sheet{box-shadow:none;max-width:none;margin:0;padding:0}
+  .cover{page-break-after:always;border-bottom:none}
+  h2{page-break-after:avoid;page-break-before:auto}
+  h3,h4{page-break-after:avoid}
+  table,.figure,.case,.callout,.todo{page-break-inside:avoid}
+  tr{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<header class="cover">
+  <p class="eyebrow">提案書 ／ RFP MC-2026-0417</p>
+  <h1>在庫管理ダッシュボードの<br>モダナイズおよび機能拡張</h1>
+  <p class="sub">信頼できる数字を、3週間で。</p>
+  <dl class="meta">
+    <div><dt>提出先</dt><dd>Meridian Components, Inc.<br>調達部長 J. Okafor 様</dd></div>
+    <div><dt>提出者</dt><dd>FPT ソフトウェア</dd></div>
+    <div><dt>提出日</dt><dd>2026年5月7日</dd></div>
+    <div><dt>総額 ／ 期間</dt><dd>148,000 USD ／ 14週間<br><span style="font-size:9pt;color:var(--text-muted)">フェーズごとの固定報酬</span></dd></div>
+  </dl>
+</header>
+
+<main>
+
+<!-- ============ 1 ============ -->
+<h2><span class="num">1.</span>エグゼクティブサマリー</h2>
+
+<p>御社の課題は、ダッシュボードが動かないことではありません。<strong>オペレーションチームが、画面に出ている数字を信用できないこと</strong>です。期間や拠点を切り替えても概要ページの指標が変わらない以上、チームが表計算ソフトで集計をやり直すのは合理的な判断です。同時に、自動テストがないために IT 部門が変更を止めざるを得ず、問題を直そうとするほど承認が通りにくくなる——この膠着が今の本質だと理解しています。</p>
+
+<p>そこで本提案では、<strong>最初の3週間で「概要ページの修正」と「その範囲を守る自動テスト」だけを納品します</strong>。スコープを意図的に小さく切ったのは、2つの理由からです。第一に、オペレーションチームが最も困っている点を最短で解消するため。第二に、IT 部門に対して、私たちの変更がテストで保証されることを、残りの作業に着手する前に実物で示すためです。信頼を言葉ではなく、動くものと緑のテストで証明してから次に進みます。</p>
+
+<p>本提案は、RFP に同梱いただいたソースコードを実際に読んだうえで作成しました。その結果、引き継ぎ資料の記述と実装が食い違う箇所を複数確認しています（詳細は §2.1）。なかでも重要なのは、<strong>国際化対応（D2）が資料に一切記載がないまま、すでに大部分実装されていた</strong>ことです。この発見により、D2 は当初想定より大幅に低コストで提供できます。希望項目のうち D2（i18n）と D3（ダークモード）を本体スコープに含めてご提案できるのは、この事前調査の結果です。</p>
+
+<p>価格は<strong>フェーズごとの固定報酬</strong>とし、総額 <strong>148,000 USD（14週間）</strong> を提示します。各フェーズが独立して価値を持つ構成のため、御社はフェーズの区切りごとに継続可否を判断できます。前任ベンダーが仕事を未完のまま残した経緯を踏まえ、「全部まとめて着手して、全部中途半端」という事態が構造的に起こらない契約形態にしています。</p>
+
+<!-- ============ 2 ============ -->
+<h2><span class="num">2.</span>技術アプローチ</h2>
+
+<h3>2.1　事前調査で判明した事実</h3>
+<p>提案にあたり、同梱いただいたソースコードを調査しました。引き継ぎ資料（<code>vendor-handoff.md</code>）との差分は以下のとおりです。この差分が、後述する見積もりの根拠になっています。</p>
+
+<table>
+  <caption>引き継ぎ資料と実装の差分</caption>
+  <thead><tr><th style="width:4%">#</th><th style="width:27%">引き継ぎ資料の記述</th><th style="width:43%">実際のコード</th><th style="width:26%">見積もりへの影響</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>i18n への言及なし</td><td><code>useI18n.js</code>、en／ja ロケール計710行、<code>LanguageSwitcher.vue</code> が実装済み。主要5ビューは対応済み</td><td><strong>D2 のコストが大幅減</strong></td></tr>
+    <tr><td>2</td><td>「Reports モジュールは開発途中。フィルターの一部が未接続」</td><td>それに加え、Reports.vue のみ i18n 未対応、唯一 <code>api.js</code> を経由せず <code>axios</code> 直叩き、<code>var</code> を使用</td><td>R2 の作業内容が具体化</td></tr>
+    <tr><td>3</td><td>「一部のビューは旧パターン（Options API）のまま。移行は未完了」</td><td><strong>全7ビュー・全コンポーネントが Options API</strong>。<code>&lt;script setup&gt;</code> の使用は0件</td><td>移行は「未完了」ではなく「未着手」。全面移行は本提案のスコープ外（§2.7）</td></tr>
+  </tbody>
+</table>
+
+<p>その他の確認事項:</p>
+<ul>
+  <li><code>server/data/purchase_orders.json</code> は空配列。発注推奨機能（R3）のデータ格納先は器だけ存在する</li>
+  <li><code>Dashboard.vue</code> は 1,271行で単一ファイル最大。R1 の主対象</li>
+  <li>バックエンドは <code>server/main.py</code>（309行）に集約。データベースはなく、<code>server/data/*.json</code> を読み込む構成</li>
+</ul>
+
+<div class="callout">
+  <span class="label">D2 について</span>
+  <p>未対応は <code>Reports.vue</code> と <code>Backlog.vue</code> の2ビュー、および詳細モーダル4種（<code>useI18n</code> を import しているにもかかわらず一度も呼び出していない＝ハードコードされた文字列が残っている状態）です。つまり D2 は「残りのモジュールへ i18n を拡張する」新規開発ではなく、<strong>既存基盤の穴を埋める作業</strong>です。東京拠点12名が英語表示のみで業務している状況は、想定よりはるかに小さいコストで解消できます。</p>
+</div>
+
+<h3>2.2　R1: 概要ページの改修 — 最優先</h3>
+<p><strong>想定している原因。</strong>フィルターの状態は <code>useFilters.js</code> composable が保持し、各ビューがそれを参照する設計になっています。概要ページの指標が反応しない以上、(a) フィルター値が API リクエストに渡っていない、(b) 渡っているがバックエンドで適用されていない、(c) 適用されているがフロント側の算出プロパティが依存関係を取りこぼしてリアクティブに再計算されていない、のいずれかです。<code>Dashboard.vue</code> が 1,271行と大きく、指標ごとに実装経路が異なる可能性があるため、<strong>指標を1つずつ潰す</strong>方針を取ります。</p>
+<p><strong>進め方。</strong></p>
+<ol>
+  <li>概要ページの全 KPI を棚卸しし、「どのフィルターに反応すべきか」の期待値表を御社と合意する</li>
+  <li>各 KPI について、フィルター適用の経路（Vue → <code>api.js</code> → FastAPI → 集計 → computed）のどこで切れているかを特定する</li>
+  <li>修正する。併せて、同じ原因が他ビューにも及んでいないか横展開で確認する</li>
+  <li><strong>期待値表をそのまま E2E テストに落とす</strong>（§2.5）</li>
+</ol>
+<p>期待値表を先に合意するのは、「直った」の定義を御社と私たちで一致させるためです。この表が、そのまま検収条件とテストケースになります。</p>
+
+<h3>2.3　R2: Reports モジュールの改修</h3>
+<p>御社が記録されている8件以上の問題について、まず再現と分類を行います。§2.1 の調査から、少なくとも以下は確定しています。</p>
+<ul>
+  <li><strong>国際化対応の不備</strong>: Reports.vue は i18n 未対応。日本語表示に切り替えても英語のまま（D2 と一体で解消）</li>
+  <li><strong>実装の逸脱</strong>: 唯一 <code>api.js</code> を経由せず <code>axios</code> を直接呼んでいる。フィルター状態の共有機構から外れているため、「フィルターの一部が未接続」の原因である可能性が高い</li>
+  <li><strong>データパターンの不整合</strong>: <code>/api/reports/quarterly</code> と <code>/api/reports/monthly-trends</code> を別々に取得しており、集計の整合が取れていない疑いがある</li>
+</ul>
+<p><strong>前提条件。</strong>御社が記録されている8件のリストをキックオフ時にご提供ください。私たちの調査結果と突き合わせ、<strong>着手前に対象を一覧として確定し、固定報酬の範囲を書面で合意します</strong>。合意したリストにない問題が後から見つかった場合は、重大度を評価のうえ、本フェーズに含めるか次フェーズに回すかを都度ご相談します（§2.8）。</p>
+
+<h3>2.4　R3: 発注推奨機能（Restocking ビュー）</h3>
+<p>現在の在庫水準（<code>inventory.json</code>）、需要予測（<code>demand_forecasts.json</code>）、およびオペレーターが指定する予算上限から、発注候補を算出して提示するビューを新設します。</p>
+<p><strong>設計方針。</strong>推奨ロジックは「ブラックボックスにしない」ことを最優先にします。Tanaka 様のチームが推奨をそのまま発注に使えるかどうかは、<strong>なぜその数量なのかが画面上で説明できるか</strong>にかかっているためです。各推奨行には、算出根拠（現在庫、予測需要、リードタイム、不足見込み）を展開表示します。</p>
+<p><strong>前提条件。</strong>発注点の算出式（安全在庫の考え方、リードタイムの扱い、予算超過時の優先順位）は、業務ルールとして御社にご決定いただく必要があります。フェーズ3の冒頭に2時間程度のワークショップを設定し、そこで確定させてから実装に入ります。既定の算出式はこちらから叩き台をご用意します。</p>
+<p><strong>データ層について。</strong><code>purchase_orders.json</code> が空配列であることから、発注データの永続化は未実装と判断しています。本提案では既存構成に合わせて JSON ファイルへの書き込みで実装しますが、発注履歴が業務データとして蓄積されるものである以上、将来的にはデータベースへの移行をお勧めします（本提案のスコープ外、§2.7）。</p>
+
+<h3>2.5　R4: ブラウザテストの自動化 — 全フェーズに分散</h3>
+<p>R4 は、他のすべてを前に進めるための前提条件だと理解しています。そのため<strong>独立したフェーズにはせず、フェーズ1から継続的に積み上げます</strong>。最後にまとめて書くテストは、往々にして「今の実装が通ること」を確認するだけのものになり、IT 部門が求めている保証にならないためです。</p>
+<table>
+  <caption>テストカバレッジの積み上げ</caption>
+  <thead><tr><th style="width:18%">フェーズ</th><th>テスト範囲</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>実行基盤の構築（Playwright、CI 連携）＋ 概要ページのフィルター挙動（R1 の期待値表＝テストケース）</td></tr>
+    <tr><td>2</td><td>Reports モジュールの主要フロー、言語切り替え</td></tr>
+    <tr><td>3</td><td>発注推奨フロー（予算上限の指定から推奨の算出まで）</td></tr>
+    <tr><td>4</td><td>在庫・受注・支出の主要ユーザーフロー、テーマ切り替え、全体の回帰</td></tr>
+  </tbody>
+</table>
+<p><strong>成果物。</strong>CI 上で実行できるテストスイートに加えて、IT 部門向けに「テストの読み方・追加の仕方」のドキュメントを納品します。私たちが去った後も御社で維持できることが R4 のゴールだと考えています。</p>
+<p>なお、バックエンドには pytest によるテストが一部存在しますが、<strong>現時点で2件が失敗します</strong>（需要データの不整合に起因）。フェーズ1でこの2件の原因を調査し、データ側の問題か実装側の問題かを切り分けてご報告します。</p>
+
+<h3>2.6　R5: アーキテクチャドキュメント</h3>
+<p>IT 部門への引き継ぎに耐えることを要件と理解しています。以下を納品します。</p>
+<ul>
+  <li>システム構成図（フロント／API／データ層、および各層の責務）</li>
+  <li>データフロー図（フィルターが UI からデータ取得を経て画面に戻るまでの経路。R1 の修正内容を反映）</li>
+  <li>API リファレンス（エンドポイント、パラメータ、レスポンス形式）</li>
+  <li>開発・テスト・デプロイの手順書</li>
+  <li><strong>既知の技術的負債と推奨される対応</strong>（§2.7 の内容を、優先度と概算工数付きで記載）</li>
+</ul>
+<p>最後の項目を含めるのは、次に引き継ぐ方が同じ調査を繰り返さずに済むようにするためです。</p>
+
+<h3>2.7　本提案のスコープ外とする項目</h3>
+<p>見積もりの透明性のため、意図的に含めなかった項目を明記します。</p>
+<table>
+  <thead><tr><th style="width:32%">項目</th><th>理由</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Options API → Composition API の全面移行</strong></td><td>全ビューが対象で工数が大きい一方、オペレーション上の便益がありません。本提案では、<strong>手を入れるファイルのみ</strong>を移行します（R1 で Dashboard.vue、R2 で Reports.vue など）。全面移行をご希望の場合は別途お見積もりします</td></tr>
+    <tr><td><strong>データベースへの移行</strong></td><td>現状の JSON ファイル構成は、現在のデータ量では実用上の問題がありません。発注履歴が蓄積されるフェーズ3以降に、改めてご相談すべき論点と考えます</td></tr>
+    <tr><td><strong>D1: UI の全面刷新</strong></td><td>§4 に別見積もりとして記載します</td></tr>
+  </tbody>
+</table>
+
+<h3>2.8　前提条件とリスク</h3>
+<ul>
+  <li><strong>R2 のスコープ</strong>: 御社記録の8件以上のリストを着手前にご提供いただき、対象を書面で確定します。確定後に発見された問題の扱いは §2.3 のとおりです</li>
+  <li><strong>R3 の業務ルール</strong>: 発注点の算出式は御社にご決定いただきます（フェーズ3冒頭のワークショップ）</li>
+  <li><strong>レビュー体制</strong>: 各フェーズの納品時に、Tanaka 様のチームから受入確認を2営業日以内にいただける前提で日程を組んでいます</li>
+  <li><strong>環境</strong>: 検証環境へのアクセスをキックオフ時にご提供ください</li>
+  <li><strong>最大のリスク</strong>: <code>Dashboard.vue</code> が1,271行と大きく、指標ごとに実装経路が異なる場合、R1 の調査に想定以上の時間がかかる可能性があります。これはフェーズ1を小さく切っている理由のひとつでもあり、万一スケジュールが動く場合も、後続フェーズへの影響を最小化できる構成にしています</li>
+</ul>
+
+<!-- ============ 3 ============ -->
+<h2><span class="num">3.</span>関連実績</h2>
+
+<div class="cases">
+  <div class="case">
+    <h4>事例1: 既存システムへの回帰テスト自動化の段階導入<span class="tag">エンタープライズセキュリティ ／ 顧客規模非公開</span></h4>
+    <p>数百万行のコードを持ち、複数のプラットフォームに対応する既存製品において、頻繁な改修に伴う回帰テストの負担が課題となっていた。FPT ソフトウェアは、手動テストを通じて業務フローを理解したうえで、安定したモジュールから自動化を開始。オンサイト・オフショアの6名体制でテストフレームワークを構築し、再利用可能なテストスクリプトによって保守時の工数・コスト削減を支援した。</p>
+    <p class="rel">本案件との関連: R4 における既存システムへの段階的なテスト導入、および改修に伴う回帰確認の仕組みづくり。</p>
+  </div>
+  <div class="case">
+    <h4>事例2: 実業務シナリオに基づく受入テストの自動化<span class="tag">国内小売・卸売 ／ 全国300店舗以上</span></h4>
+    <p>全国に300店舗以上を展開する日本の小売・卸売企業に対し、FPT ソフトウェアは取引管理システムの受入テスト自動化を提案。RPA を用いて、100名が同時にシステムを利用する実業務の操作を再現し、手動で実施していた検証の自動化を支援した。</p>
+    <p class="rel">本案件との関連: R4 において、実装単位ではなく、現場の利用シナリオを起点にテストと受入確認を設計する考え方。</p>
+  </div>
+  <div class="case">
+    <h4>事例3: 流通管理システム刷新によるデータ活用とレポート業務の改善<span class="tag">消費財製造 ／ ベトナム大手</span></h4>
+    <p>複雑な既存システムを持つ消費財メーカーに対し、FPT ソフトウェアは流通管理システムの刷新を支援。在庫・購買・発注などの業務を統合し、業務プロセスの定義から導入、利用者教育、稼働後支援まで対応した。実データに基づくレポート作成を可能にし、週次報告の作成時間短縮と予測精度の改善を実現した。</p>
+    <p class="rel">本案件との関連: R1・R2 の業務データと表示・集計結果の整合性を重視する方針、および R3 の在庫・購買・発注業務への理解。</p>
+  </div>
+  <div class="case">
+    <h4>事例4: 需要予測と既存在庫システムの連携による在庫管理の高度化<span class="tag">国内大手調査・コンサルティング企業 ／ 医薬品領域</span></h4>
+    <p>製薬企業・薬局向けに在庫・流通・発注システムを提供する日本の大手企業に対し、FPT ソフトウェアは処方量を予測する AI ソリューションを構築。予測結果を RPA で既存在庫システムへ取り込み、在庫管理を自動化した。公開事例では、<strong>需要予測精度98％、欠品率4％、売れ残り在庫金額8％削減</strong>の成果が報告されている。</p>
+    <p class="rel">本案件との関連: R3 における需要予測データの在庫管理への活用、および既存システムを活かした機能拡張。なお、本案件の発注推奨は、合意した業務ルールに基づく設計を前提とする。</p>
+  </div>
+</div>
+
+<p><strong>体制。</strong>本案件はオンサイトとオフショアを組み合わせた最大6名体制で臨みます。事例1・事例2で用いたのと同じ体制の取り方です。</p>
+
+<table>
+  <caption>プロジェクト体制</caption>
+  <thead><tr><th style="width:38%">役割</th><th style="width:17%">所在</th><th>関与</th></tr></thead>
+  <tbody>
+    <tr><td>プロジェクトマネージャー</td><td>オンサイト</td><td>全期間（兼務）</td></tr>
+    <tr><td>リードエンジニア</td><td>オンサイト</td><td>全期間（フルタイム）</td></tr>
+    <tr><td>アプリケーションエンジニア ×3</td><td>オフショア</td><td>フェーズ2・3 でピーク（フェーズ1・4 は2名）</td></tr>
+    <tr><td>テスト自動化エンジニア ×1</td><td>オフショア</td><td>全期間（フルタイム）</td></tr>
+  </tbody>
+  <tfoot>
+    <tr><td colspan="3">総工数 約57人週（14週間の平均で約4名、ピーク時6名）</td></tr>
+  </tfoot>
+</table>
+
+<p><strong>テスト自動化エンジニアを専任で置く</strong>のは、R4 を後工程に回さずフェーズ1から全期間で並走させるためです（§2.5）。IT 部門の承認が各フェーズの出口で滞らないことを、体制の面からも担保します。</p>
+
+<p>窓口はオンサイトのプロジェクトマネージャーとリードエンジニアに一本化し、Tanaka 様のチームおよび IT 部門とのやり取りで御社に負担が分散しないようにします。フェーズを通じて同一のメンバーが担当し、途中での交代は行いません。</p>
+
+<!-- ============ 4 ============ -->
+<h2><span class="num">4.</span>スケジュールと価格</h2>
+
+<figure class="figure">
+  <figcaption>フェーズ構成とマイルストーン（全14週）</figcaption>
+  <div class="gantt">
+
+    <div class="g-row">
+      <div></div>
+      <div class="g-weeks" aria-hidden="true">
+        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+        <span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="g-row">
+      <div class="g-label">フェーズ1　信頼の回復<span class="wk">週 1–3</span></div>
+      <div class="g-track">
+        <div class="bar" data-ph="1" style="grid-column:1 / span 3" data-tip="フェーズ1　信頼の回復&#10;週 1–3（3週）／ 32,000 USD&#10;R1 概要ページ修正・E2E テスト基盤"></div>
+      </div>
+      <div class="g-value">32,000 USD</div>
+    </div>
+
+    <div class="g-row">
+      <div class="g-label">フェーズ2　Reports と日本語化<span class="wk">週 4–7</span></div>
+      <div class="g-track">
+        <div class="bar" data-ph="2" style="grid-column:4 / span 4" data-tip="フェーズ2　Reports と日本語化&#10;週 4–7（4週）／ 46,000 USD&#10;R2 欠陥修正・D2 i18n 完了"></div>
+      </div>
+      <div class="g-value">46,000 USD</div>
+    </div>
+
+    <div class="g-row">
+      <div class="g-label">フェーズ3　発注推奨機能<span class="wk">週 8–11</span></div>
+      <div class="g-track">
+        <div class="bar bar-end" data-ph="3" style="grid-column:8 / span 4" data-tip="フェーズ3　発注推奨機能&#10;週 8–11（4週）／ 44,000 USD&#10;R3 Restocking ビュー"></div>
+      </div>
+      <div class="g-value">44,000 USD</div>
+    </div>
+
+    <div class="g-row">
+      <div class="g-label">フェーズ4　仕上げと引き継ぎ<span class="wk">週 12–14</span></div>
+      <div class="g-track">
+        <div class="bar bar-end" data-ph="4" style="grid-column:12 / span 3" data-tip="フェーズ4　仕上げと引き継ぎ&#10;週 12–14（3週）／ 26,000 USD&#10;R4 テスト完備・R5 ドキュメント・D3"></div>
+      </div>
+      <div class="g-value">26,000 USD</div>
+    </div>
+
+    <div class="g-row">
+      <div></div>
+      <div class="g-ms">
+        <div class="ms" style="grid-column:1 / span 3">概要ページ修正<br>テスト基盤稼働</div>
+        <div class="ms" style="grid-column:4 / span 4">Reports 修正完了<br>日本語化完了</div>
+        <div class="ms" style="grid-column:8 / span 4">発注推奨機能<br>リリース</div>
+        <div class="ms" style="grid-column:12 / span 3">全納品物の<br>引き継ぎ完了</div>
+      </div>
+      <div></div>
+    </div>
+
+  </div>
+</figure>
+
+<h3>4.1　フェーズ別の納品物と価格</h3>
+<table>
+  <caption>上図の内訳（各フェーズの検収完了をもって請求）</caption>
+  <thead>
+    <tr><th style="width:27%">フェーズ</th><th class="nw" style="width:9%">期間</th><th>納品物</th><th class="num-col" style="width:14%">価格 (USD)</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="swatch" style="background:var(--ph1)"></span><strong>1. 信頼の回復</strong></td>
+      <td class="nw">3週</td>
+      <td>R1 概要ページの修正（全 KPI がフィルターに追従）／ E2E テスト基盤の構築と概要ページのテスト ／ 既存 pytest 失敗2件の原因報告</td>
+      <td class="num-col">32,000</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--ph2)"></span><strong>2. Reports と日本語化</strong></td>
+      <td class="nw">4週</td>
+      <td>R2 Reports モジュールの欠陥修正（合意リスト全件）／ D2 Reports・Backlog・モーダル4種の i18n 完了 ／ 該当範囲の E2E テスト</td>
+      <td class="num-col">46,000</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--ph3)"></span><strong>3. 発注推奨機能</strong></td>
+      <td class="nw">4週</td>
+      <td>R3 Restocking ビュー（算出根拠の表示を含む）／ 業務ルール確定ワークショップ ／ 該当範囲の E2E テスト</td>
+      <td class="num-col">44,000</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--ph4)"></span><strong>4. 仕上げと引き継ぎ</strong></td>
+      <td class="nw">3週</td>
+      <td>R4 主要ユーザーフローの E2E テスト完備と IT 部門向け手順書 ／ R5 アーキテクチャドキュメント一式 ／ D3 ダークモード ／ 全体回帰テスト</td>
+      <td class="num-col">26,000</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr><td>合計</td><td class="nw">14週</td><td></td><td class="num-col">148,000</td></tr>
+  </tfoot>
+</table>
+
+<h3>4.2　オプション（別見積もり）</h3>
+<table>
+  <thead><tr><th>項目</th><th style="width:12%">期間</th><th class="num-col" style="width:18%">価格 (USD)</th></tr></thead>
+  <tbody>
+    <tr><td>D1: UI の全面刷新</td><td class="nw">5週</td><td class="num-col">38,000</td></tr>
+    <tr><td>Options API → Composition API 全面移行</td><td class="nw">3週</td><td class="num-col">22,000</td></tr>
+  </tbody>
+</table>
+
+<h3>4.3　契約形態</h3>
+<ul>
+  <li><strong>フェーズごとの固定報酬</strong>とします。各フェーズの検収完了をもって請求します</li>
+  <li>各フェーズ終了時点で、御社は<strong>次フェーズへ進むかどうかを判断できます</strong>。中断された場合、それまでに納品したものは単独で動作し、テストに保護された状態で御社の資産として残ります</li>
+  <li>スコープ変更は書面での合意制とし、固定報酬の前提（§2.8）が崩れた場合のみ再見積もりの対象とします</li>
+</ul>
+<p>キックオフは契約締結後5営業日以内に実施可能です。</p>
+
+<!-- ============ 5 ============ -->
+<h2><span class="num">5.</span>なぜ FPT ソフトウェアか</h2>
+
+<p>前任ベンダーの件について、御社の見立ては「能力はあったが、案件を抱え込みすぎて未完のまま残していった」と伺っています。私たちはその再発を、意思や努力ではなく<strong>契約の構造で防ぎます</strong>。</p>
+<ul>
+  <li>フェーズを小さく切り、各フェーズが単独で価値を持つように設計しました。途中で止まっても、使えるものが残ります</li>
+  <li>テストを最後にまとめず、フェーズ1から積み上げます。IT 部門の承認が後工程のボトルネックになりません</li>
+  <li>スコープ外の項目を §2.7 に明記しました。やらないことを先に書くのは、やると書いたことを確実に納めるためです</li>
+</ul>
+<p>そして、本提案に記載した見積もりは、同梱いただいたコードを実際に読んだうえで作成しています。引き継ぎ資料との差分3件（§2.1）は、その過程で見つけたものです。着手してから「思っていたのと違った」と申し上げることのないよう、分かる範囲は先に調べました。</p>
+
+<div class="closing">
+  <p class="contact-label">お問い合わせ先</p>
+  <p class="contact-body">
+    <strong>FPT ソフトウェア</strong><br>
+    Dovan Dung（開発責任者）<br>
+    <a href="mailto:dungdv@fpt.com">dungdv@fpt.com</a>
+  </p>
+  <p class="contact-note">本提案に関するご質問は、提出期限後も随時お受けします。</p>
+</div>
+
+</main>
+</div>
+</body>
+</html>
