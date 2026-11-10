@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>作業進捗レポート — Meridian ワークショップ（RFP MC-2026-0417）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --surface-1:#fcfcfb; --surface-2:#f4f4f1; --surface-3:#ebebe6;
+  --rule:#dcdcd5; --rule-strong:#b9b9ae;
+  --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#84837c;
+  --accent:#2a78d6; --accent-soft:#eaf2fd;
+  /* 進行段階（オーディナル青ランプ：light/ordinal 検証済み） */
+  --ph1:#86b6ef; --ph2:#5598e7; --ph3:#2a78d6; --ph4:#184f95;
+  /* ステータス（固定・テーマ非依存。必ずアイコン＋ラベルと併用する） */
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    color-scheme:dark;
+    --surface-1:#1a1a19; --surface-2:#232321; --surface-3:#2d2d2a;
+    --rule:#3a3a36; --rule-strong:#55554e;
+    --ink:#f0efec; --ink-2:#c3c2b7; --ink-3:#95948b;
+    --accent:#3987e5; --accent-soft:#16283f;
+    --ph1:#1c5cab; --ph2:#2a78d6; --ph3:#5598e7; --ph4:#86b6ef;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--surface-2);color:var(--ink);
+  font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  font-size:15px;line-height:1.85;font-feature-settings:"palt" 1;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:48px 40px 72px;background:var(--surface-1);
+  box-shadow:0 1px 3px rgba(0,0,0,.05),0 10px 40px rgba(0,0,0,.06)}
+
+header{border-bottom:2px solid var(--ink);padding-bottom:26px;margin-bottom:34px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--accent);margin:0 0 12px}
+h1{font-size:30px;font-weight:700;line-height:1.42;margin:0 0 10px;letter-spacing:-.01em}
+.sub{color:var(--ink-2);margin:0;font-size:15px}
+.meta{display:flex;gap:34px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid var(--rule);font-size:13px}
+.meta b{display:block;color:var(--ink-3);font-weight:500;font-size:11px;letter-spacing:.06em;margin-bottom:3px}
+
+h2{font-size:21px;font-weight:700;margin:46px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--rule-strong)}
+h2 .n{color:var(--accent);margin-right:.5em}
+h3{font-size:16px;font-weight:700;margin:28px 0 10px}
+p{margin:0 0 12px}
+ul{margin:0 0 14px;padding-left:20px}
+li{margin-bottom:6px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;
+  background:var(--surface-3);padding:1px 6px;border-radius:3px}
+
+/* stat tiles */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin:22px 0 10px}
+.stat{border-left:3px solid var(--accent);padding:4px 0 4px 16px}
+.stat .v{font-size:34px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat .v small{font-size:15px;font-weight:500;color:var(--ink-2)}
+.stat .k{font-size:12px;color:var(--ink-3);margin-top:5px;line-height:1.5}
+
+table{width:100%;border-collapse:collapse;margin:14px 0 20px;font-size:14px;line-height:1.7}
+caption{caption-side:top;text-align:left;font-size:12px;font-weight:700;color:var(--ink-3);padding-bottom:7px}
+th,td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
+thead th{background:var(--surface-3);font-size:12px;font-weight:700;color:var(--ink-2);letter-spacing:.03em;
+  border-bottom:1px solid var(--rule-strong)}
+tbody tr:last-child td{border-bottom:1px solid var(--rule-strong)}
+.nw{white-space:nowrap}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* status chips: アイコン＋ラベルを必ず伴う（色だけで意味を持たせない） */
+.chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  font-size:12px;font-weight:700;padding:2px 9px 2px 7px;border-radius:11px;
+  border:1px solid transparent;line-height:1.7}
+.chip .ic{font-size:11px;line-height:1}
+.chip.done{color:#0a7a0a;background:rgba(12,163,12,.12);border-color:rgba(12,163,12,.35)}
+.chip.open{color:#9a6a00;background:rgba(250,178,25,.16);border-color:rgba(250,178,25,.45)}
+.chip.oos {color:#a8442a;background:rgba(236,131,90,.16);border-color:rgba(236,131,90,.45)}
+.chip.bug {color:#a82e2e;background:rgba(208,59,59,.13);border-color:rgba(208,59,59,.38)}
+@media (prefers-color-scheme:dark){
+  .chip.done{color:#5fd05f} .chip.open{color:#fac44f} .chip.oos{color:#f0a184} .chip.bug{color:#ef7a7a}
+}
+
+.callout{background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:14px 18px;margin:18px 0;border-radius:0 4px 4px 0}
+.callout p:last-child{margin-bottom:0}
+.callout .label{display:block;font-size:11px;font-weight:700;letter-spacing:.09em;color:var(--accent);margin-bottom:5px}
+.warnbox{background:var(--surface-3);border-left:3px solid var(--warning);
+  padding:14px 18px;margin:18px 0;border-radius:0 4px 4px 0}
+.warnbox .label{display:block;font-size:11px;font-weight:700;letter-spacing:.09em;color:var(--ink);margin-bottom:5px}
+
+/* phase bars */
+.phases{display:flex;flex-direction:column;gap:2px;margin:16px 0 22px}
+.prow{display:grid;grid-template-columns:196px 1fr 92px;gap:0 12px;align-items:center}
+.pwk{display:grid;grid-template-columns:repeat(14,1fr);font-size:10px;color:var(--ink-3);
+  border-bottom:1px solid var(--rule);padding-bottom:4px;margin-bottom:7px;font-variant-numeric:tabular-nums}
+.pwk span{text-align:center}
+.plab{font-size:12.5px;font-weight:500;padding:5px 0;line-height:1.4;line-break:strict}
+.plab .r{display:block;font-size:11px;color:var(--ink-3);font-weight:400}
+.ptrack{display:grid;grid-template-columns:repeat(14,1fr);padding:5px 0}
+.pbar{height:10px;border-radius:4px;box-shadow:0 0 0 2px var(--surface-1)}
+.pbar[data-p="1"]{background:var(--ph1)} .pbar[data-p="2"]{background:var(--ph2)}
+.pbar[data-p="3"]{background:var(--ph3)} .pbar[data-p="4"]{background:var(--ph4)}
+.pval{text-align:right;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* git graph */
+.git{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.95;
+  background:var(--surface-3);padding:16px 20px;border-radius:5px;margin:14px 0 20px;overflow-x:auto}
+.git .h{color:var(--accent);font-weight:700}
+.git .d{color:var(--ink-3)}
+
+a{color:var(--accent)}
+footer{margin-top:52px;padding-top:20px;border-top:2px solid var(--ink);font-size:13px;color:var(--ink-3)}
+
+@page{size:A4;margin:14mm}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid} table,.callout,.warnbox,.phases,.git,.stats{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+@media (max-width:760px){
+  .wrap{padding:30px 20px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .prow{grid-template-columns:130px 1fr 78px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">作業進捗レポート</p>
+  <h1>Meridian Components 在庫管理ダッシュボード<br>RFP MC-2026-0417 への応札と初回改修</h1>
+  <p class="sub">提案書の作成から、受注後の最初の不具合修正・コードレビュー・コミットまで</p>
+  <div class="meta">
+    <div><b>作成日</b>2026年11月10日</div>
+    <div><b>提出者</b>FPT ソフトウェア</div>
+    <div><b>担当</b>Dovan Dung（開発責任者）</div>
+    <div><b>リポジトリ</b>IMMACORP/meridian-workshop-jp-main-jp</div>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="v">2<small> / 2</small></div><div class="k">完了した幕<br>（第1幕・第2幕）</div></div>
+  <div class="stat"><div class="v">3</div><div class="k">作成した成果物<br>（提案書・HTML・スライド）</div></div>
+  <div class="stat"><div class="v">5<small> / 5</small></div><div class="k">フィルターに連動するよう<br>修正した KPI</div></div>
+  <div class="stat"><div class="v">3</div><div class="k">スコープ外として<br>報告した既存バグ</div></div>
+</div>
+
+<!-- ============================================================ -->
+<h2><span class="n">1.</span>全体のサマリー</h2>
+
+<table>
+  <thead><tr><th style="width:16%">フェーズ</th><th style="width:44%">作業</th><th class="nw" style="width:13%">状態</th><th>成果物</th></tr></thead>
+  <tbody>
+    <tr><td>第1幕</td><td>RFP の読み解き、コードベースの事前調査、提案方針の決定</td><td><span class="chip done"><span class="ic">●</span>完了</span></td><td>—</td></tr>
+    <tr><td>第1幕</td><td>提案書の作成</td><td><span class="chip done"><span class="ic">●</span>完了</span></td><td><code>proposal/proposal.md</code></td></tr>
+    <tr><td>第1幕</td><td>提案書の HTML 版（クライアント送付用）</td><td><span class="chip done"><span class="ic">●</span>完了</span></td><td><code>proposal/proposal.html</code></td></tr>
+    <tr><td>第1幕</td><td>ケイパビリティ・プレゼン（15枚）</td><td><span class="chip done"><span class="ic">●</span>完了</span></td><td><code>proposal/capability-deck.html</code></td></tr>
+    <tr><td>第2幕</td><td>アプリ起動と R1 不具合の原因特定</td><td><span class="chip done"><span class="ic">●</span>完了</span></td><td>—</td></tr>
+    <tr><td>第2幕</td><td>概要ページ KPI の修正</td><td><span class="chip done"><span class="ic">●</span>完了</span></td><td><code>client/src/views/Dashboard.vue</code></td></tr>
+    <tr><td>第2幕</td><td>サブエージェントによるコードレビューと指摘対応</td><td><span class="chip done"><span class="ic">●</span>完了</span></td><td>—</td></tr>
+    <tr><td>第2幕</td><td>コミットと push（3ブランチ）</td><td><span class="chip done"><span class="ic">●</span>完了</span></td><td>—</td></tr>
+    <tr><td>第2幕</td><td>PR の作成</td><td><span class="chip open"><span class="ic">▲</span>未完了</span></td><td>ブラウザでの操作が必要</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2><span class="n">2.</span>第1幕：提案</h2>
+
+<h3>2.1　事前調査で判明したこと</h3>
+<p>提案書を書く前に、RFP に同梱されたソースコードを調査しました。引き継ぎ資料（<code>docs/rfp/vendor-handoff.md</code>）の記述と実装が3点食い違っており、これが見積もりの根拠になっています。</p>
+
+<table>
+  <caption>引き継ぎ資料と実装の差分</caption>
+  <thead><tr><th style="width:28%">引き継ぎ資料の記述</th><th style="width:42%">実際のコード</th><th>影響</th></tr></thead>
+  <tbody>
+    <tr><td>i18n への言及なし</td><td><code>useI18n.js</code>、en／ja ロケール計710行、<code>LanguageSwitcher.vue</code> が実装済み。主要5ビューは対応済み</td><td><strong>D2 のコストが大幅減</strong></td></tr>
+    <tr><td>「Reports は開発途中。フィルターの一部が未接続」</td><td>加えて Reports.vue のみ i18n 未対応、唯一 <code>api.js</code> を経由せず <code>axios</code> 直叩き、<code>var</code> を使用</td><td>R2 の作業内容が具体化</td></tr>
+    <tr><td>「一部のビューは旧パターンのまま。移行は未完了」</td><td><strong>全7ビュー・全コンポーネントが Options API</strong>。<code>&lt;script setup&gt;</code> は0件</td><td>移行は「未着手」。スコープ外として明示</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <span class="label">この発見が効いた点</span>
+  <p>i18n は資料に一切記載がないまま大部分が実装済みでした。未対応は <code>Reports.vue</code> と <code>Backlog.vue</code> の2ビュー、および詳細モーダル4種のみです。これにより D2（i18n）と D3（ダークモード）を<strong>追加費用なしで本体スコープに含める</strong>ことができました。</p>
+</div>
+
+<h3>2.2　提案の骨子</h3>
+<p>フェーズごとの固定報酬、総額 <strong>148,000 USD / 14週間</strong>。第1フェーズを意図的に小さく切り、残りに着手する前に信頼を得る構成にしています。</p>
+
+<div class="phases">
+  <div class="prow">
+    <div></div>
+    <div class="pwk"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span></div>
+    <div></div>
+  </div>
+  <div class="prow">
+    <div class="plab">フェーズ1　信頼の回復<span class="r">R1・テスト基盤</span></div>
+    <div class="ptrack"><div class="pbar" data-p="1" style="grid-column:1 / span 3"></div></div>
+    <div class="pval">32,000 USD</div>
+  </div>
+  <div class="prow">
+    <div class="plab">フェーズ2　Reports と日本語化<span class="r">R2・D2</span></div>
+    <div class="ptrack"><div class="pbar" data-p="2" style="grid-column:4 / span 4"></div></div>
+    <div class="pval">46,000 USD</div>
+  </div>
+  <div class="prow">
+    <div class="plab">フェーズ3　発注推奨機能<span class="r">R3</span></div>
+    <div class="ptrack"><div class="pbar" data-p="3" style="grid-column:8 / span 4"></div></div>
+    <div class="pval">44,000 USD</div>
+  </div>
+  <div class="prow">
+    <div class="plab">フェーズ4　仕上げと引き継ぎ<span class="r">R4・R5・D3</span></div>
+    <div class="ptrack"><div class="pbar" data-p="4" style="grid-column:12 / span 3"></div></div>
+    <div class="pval">26,000 USD</div>
+  </div>
+</div>
+
+<ul>
+  <li><strong>R4（テスト）は独立フェーズにせず全フェーズに分散</strong> — 最後にまとめて書くテストは「今の実装が通ること」の確認にしかならず、IT 部門が求める保証にならないため</li>
+  <li><strong>D1（UI 全面刷新）は別見積もり</strong>（38,000 USD / 5週）としてスコープ外に明記 — 前任ベンダーの「抱え込みすぎ」の再発を、意思ではなく契約の構造で防ぐ</li>
+  <li>体制は最大6名（オンサイト2名＋オフショア4名）、総工数 約57人週</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2><span class="n">3.</span>第2幕：R1 の修正</h2>
+
+<h3>3.1　原因</h3>
+<p><strong>フィルターの配線は正常でした。</strong><code>FilterBar.vue</code> → <code>useFilters.js</code> → <code>watch</code> → <code>loadData()</code> → <code>api.js</code> → FastAPI の経路はすべて正しく動作しており、API を直接叩くとフィルターに応じた値が返っていました。</p>
+<p>問題は <strong>KPI カードが取得済みのデータを使わず固定値を表示していたこと</strong>です。<code>ordersData.value</code> と <code>fillRate.value</code> への代入は、コード全体に1箇所もありませんでした。</p>
+
+<table>
+  <caption>KPI カードの状態（修正前 → 修正後）</caption>
+  <thead><tr><th style="width:22%">KPI</th><th style="width:38%">修正前</th><th>修正後の算出式</th></tr></thead>
+  <tbody>
+    <tr><td>在庫回転率</td><td>テンプレートに <code>4.2</code> を直書き</td><td>Σ受注明細 <code>quantity</code> ÷ Σ在庫 <code>quantity_on_hand</code></td></tr>
+    <tr><td>受注充足数</td><td><code>ref({ fulfilled: 187, goal: 200 })</code></td><td>status が Delivered / Shipped の件数</td></tr>
+    <tr><td>受注充足率</td><td><code>ref(96.8)</code></td><td>充足件数 ÷ 全受注件数 × 100</td></tr>
+    <tr><td>売上</td><td><code>summary.total_orders_value</code>（正常）</td><td>変更なし</td></tr>
+    <tr><td>平均処理日数</td><td>テンプレートに <code>2.8</code> を直書き</td><td>既存 <code>orderHealthMetrics.avgFulfillmentDays</code> を再利用</td></tr>
+  </tbody>
+</table>
+
+<p>目標値は「件数と期間あたりの率は期間フィルターで按分し、比率(%)と日数は按分しない」という基準で統一しました。画面下部のドーナツチャート・カテゴリー別・受注推移・在庫上位・バックログは、もとから正しく反応していました。</p>
+
+<h3>3.2　検証結果</h3>
+<p>Chrome DevTools Protocol で実ブラウザを操作し、フィルターを切り替えて KPI を読み取りました。値はデータから独立に計算した期待値と一致しています。</p>
+
+<table>
+  <thead><tr><th>フィルター</th><th class="num">在庫回転率</th><th class="num">注文履行数</th><th class="num">充足率</th><th class="num">平均処理日数</th></tr></thead>
+  <tbody>
+    <tr><td>なし</td><td class="num">15.76</td><td class="num">196</td><td class="num">78.4%</td><td class="num">8.7</td></tr>
+    <tr><td>拠点 = Tokyo</td><td class="num">23.20</td><td class="num">72</td><td class="num">81.8%</td><td class="num">8.6</td></tr>
+    <tr><td>期間 = 2025-03</td><td class="num">1.63</td><td class="num">22（目標 17）</td><td class="num">91.7%</td><td class="num">9.7</td></tr>
+    <tr><td>0件の組み合わせ</td><td class="num">0.00</td><td class="num">0</td><td class="num">—</td><td class="num">—</td></tr>
+  </tbody>
+</table>
+
+<p>バックエンドのテストは <strong>38 passed / 2 failed</strong>。失敗2件は demand データの既存の不整合（<code>CLAUDE.md</code> に記載あり）で、本変更はフロントエンドのみのため無関係です。</p>
+
+<h3>3.3　コードレビューで追加修正した点</h3>
+<p>サブエージェント（<code>code-reviewer</code>）のレビューを受け、スコープ内の指摘を修正しました。</p>
+<ul>
+  <li><strong><code>loadData</code> が成功時に <code>error</code> をリセットしていなかった</strong> — 一度 API が失敗すると、以降フィルターを変えて取得に成功しても画面が復帰しません。「フィルターを変えても更新されない」症状を生む既存バグでした</li>
+  <li><code>status</code> / 日付が欠損したデータで computed が例外や <code>NaN</code> を起こしうる箇所にガードを追加</li>
+  <li><strong>対象0件のときに <code>0</code> ではなく <code>—</code> を表示</strong> — 平均処理日数が <code>0</code> だと「目標より速い」と誤読されるため、「データなし」と「実績ゼロ」を区別</li>
+  <li>受注充足数の進捗バーだけ 100% で頭打ちになっておらず、月次フィルターで超過するとバーがはみ出していた</li>
+  <li><code>loadData</code> 内のローカル変数が同名の computed をシャドウしていた</li>
+</ul>
+
+<div class="warnbox">
+  <span class="label">レビュー指摘のうち、対応しなかったもの</span>
+  <p><strong>「<code>revenueGoal</code> の通貨換算漏れ」は誤りでした。</strong><code>formatCurrency</code> が USD→JPY 換算を行っています（表示の ¥1,440,000,000 = 9.6M × 150）。</p>
+  <p><strong>進捗バーの意味の逆転</strong>は意図的な挙動としてコメントを残すに留めました。平均処理日数 8.7日（目標3.0日、+191%）でバーが満タンになりますが、「小さいほど良い」指標のバー表現を変えるのは KPI カードの設計変更にあたり、R1 のスコープ外と判断しています。数値と差分は正しく表示されています。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2><span class="n">4.</span>スコープ外として報告した既存の不具合</h2>
+<p>同じ画面を調べる過程で見つかりましたが、R1 の範囲外のため修正していません。提案書 §2.6「既知の技術的負債」に載せる候補です。</p>
+
+<table>
+  <thead><tr><th style="width:24%">不具合</th><th style="width:50%">内容</th><th class="nw" style="width:12%">区分</th><th>関連</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>PurchaseOrderModal</code> 未登録</td>
+      <td>テンプレートで使われているのに <code>import</code> も <code>components</code> への登録もなく、描画のたびに Vue が警告を出す。「Create PO」が動作しない</td>
+      <td><span class="chip bug"><span class="ic">■</span>不具合</span></td><td>—</td>
+    </tr>
+    <tr>
+      <td><code>/api/tasks</code> が 404</td>
+      <td><code>api.js</code> は <code>/api/tasks</code> と <code>/api/purchase-orders</code> を呼ぶが、バックエンドに実装がない</td>
+      <td><span class="chip bug"><span class="ic">■</span>不具合</span></td><td><strong>R3</strong> のデータ層</td>
+    </tr>
+    <tr>
+      <td>ドーナツの周長不一致</td>
+      <td><code>r="65"</code>（周長 408.4）に対し <code>getCircleSegment</code> が 440 でスケールしており、各セグメントが約7.7%過大に描画される</td>
+      <td><span class="chip oos"><span class="ic">▲</span>スコープ外</span></td><td>—</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2><span class="n">5.</span>リポジトリの状態</h2>
+
+<div class="git">
+<span class="h">master</span>                       34e8963  <span class="d">出発点</span><br>
+├─ <span class="h">docs/proposal</span>             d153bf6  <span class="d">提案書3点（第1幕）</span><br>
+├─ <span class="h">docs/progress-report</span>      （本ファイル）<br>
+└─ <span class="h">fix/dashboard-kpi-filters</span> 17907fd  <span class="d">KPI の修正（第2幕）</span>
+</div>
+
+<p>いずれも <code>origin</code>（<code>github.com/IMMACORP/meridian-workshop-jp-main-jp</code>）に push 済みで、追跡設定も入っています。提案書・修正・本レポートはそれぞれ <code>master</code> から独立したブランチに分けてあるため、別々に PR を出せます。</p>
+
+<table>
+  <thead><tr><th style="width:30%">項目</th><th>状態</th></tr></thead>
+  <tbody>
+    <tr><td>作業ツリー</td><td><span class="chip done"><span class="ic">●</span>クリーン</span>　未コミットの変更なし（本ファイルを除く）</td></tr>
+    <tr><td>サーバー</td><td><span class="chip done"><span class="ic">●</span>停止済み</span>　ポート 3000 / 8001 とも解放</td></tr>
+    <tr><td>PR</td><td><span class="chip open"><span class="ic">▲</span>未作成</span>　<code>gh</code> CLI 未インストールのためブラウザでの操作が必要</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2><span class="n">6.</span>次にやること</h2>
+
+<table>
+  <thead><tr><th style="width:34%">項目</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>PR の作成</strong></td>
+      <td>本文は <code>~/Desktop/fix.md</code> と <code>~/Desktop/docs.md</code> に用意済み。<a href="https://github.com/IMMACORP/meridian-workshop-jp-main-jp/pull/new/fix/dashboard-kpi-filters">fix/dashboard-kpi-filters</a> と <a href="https://github.com/IMMACORP/meridian-workshop-jp-main-jp/pull/new/docs/proposal">docs/proposal</a> から作成する（<code>gh</code> CLI 未インストールのためブラウザでの操作が必要）</td>
+    </tr>
+    <tr>
+      <td>提案書 §3 の体制の数字</td>
+      <td>総工数 約57人週は、総額 148,000 USD との整合を取るために置いた数字。実際の見積もり根拠に合わせた調整が必要かもしれない</td>
+    </tr>
+    <tr>
+      <td>RFP の残りの要件</td>
+      <td>R2（Reports の欠陥8件以上）、R3（発注推奨機能）、R4（E2E テスト整備）、R5（アーキテクチャドキュメント）は未着手</td>
+    </tr>
+  </tbody>
+</table>
+
+<footer>
+  作業進捗レポート　／　2026年11月10日　／　FPT ソフトウェア　Dovan Dung（開発責任者）　dungdv@fpt.com
+</footer>
+
+</div>
+</body>
+</html>
